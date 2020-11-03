@@ -2,10 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// create namespace
-if (typeof Mzp === 'undefined') { // eslint-disable-line block-scoped-var
-    var Mzp = {};
-}
+// Copied from Protocol, to be backported along with nav updates.
 
 (function(Mzp) {
     'use strict';
@@ -326,7 +323,7 @@ if (typeof Mzp === 'undefined') { // eslint-disable-line block-scoped-var
     Menu.init = function(options) {
         if (typeof options === 'object') {
             for (var i in options) {
-                if (options.hasOwnProperty(i)) {
+                if (options.hasOwnProperty.call(i)) {
                     _options[i] = options[i];
                 }
             }

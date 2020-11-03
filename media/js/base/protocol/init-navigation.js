@@ -14,12 +14,7 @@
 
     var hasMediaQueries = typeof window.matchMedia !== 'undefined';
 
-    function onImageLoad(e) {
-        e.target.removeAttribute('data-src');
-        e.target.removeAttribute('data-srcset');
-    }
-
-    function handleOnMenuOpen(el) {
+    function handleOnMenuOpen() {
         if (!hasMediaQueries || !window.matchMedia('(min-width: 768px)').matches) {
             return;
         }

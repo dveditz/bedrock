@@ -137,4 +137,3 @@ def test_secondary_download_button_android_nightly_displayed(base_url, selenium)
 def test_secondary_download_button_ios_displayed(base_url, selenium):
     page = FirefoxReleaseNotesPage(selenium, base_url, slug='ios/25.0').open()
     assert page.is_secondary_app_store_button_displayed
-

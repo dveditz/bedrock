@@ -134,7 +134,6 @@
 -brand-name-xp = XP
 -brand-name-vista = Vista
 -brand-name-chromeos = Chrome OS
--brand-name-chromebook = Chromebook
 
 ## Apple products
 
