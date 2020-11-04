@@ -363,4 +363,7 @@ navigation-private-browsing = Private Browsing
 navigation-what-is-a-browser = What is a Browser?
 navigation-browsing-history = Browsing History
 navigation-browser-history = Browser History
+navigation-our-promise= Our Promise
+navigation-our-products = Our Products
+navigation-little-book-of-privacy = Little Book of Privacy
 
