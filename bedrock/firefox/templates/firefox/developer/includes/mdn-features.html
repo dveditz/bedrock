@@ -6,6 +6,8 @@
 
 {% from "macros-protocol.html" import picto with context %}
 
+{% set utm_params = '?utm_source=www.mozilla.org&utm_medium=referral&utm_campaign=fxdev-whatsnew' %}
+
 <section>
   <div class="mzp-l-content mzp-t-content-lg">
     <div class="mzp-c-section-heading">
@@ -14,16 +16,16 @@
     </div>
     <div class="mzp-l-columns mzp-t-columns-three">
       <div>
-        <h3 class="mzp-u-title-xs"><a href="https://developer.mozilla.org/docs/Web?utm_source=www.mozilla.org&utm_medium=referral&utm_campaign=fxdev-whatsnew" rel="external">{{ ftl('firefox-developer-mdn-references') }}</a></h3>
-        <p>{{ ftl('firefox-developer-mdn-is-a') }}</p>
+        <h3 class="mzp-u-title-xs"><a href="https://developer.mozilla.org/en-US/play/{{ utm_params }}" rel="external">{{ ftl('firefox-developer-mdn-playground') }}</a></h3>
+        <p>{{ ftl('firefox-developer-mdn-write-test-and-share') }}</p>
       </div>
       <div>
-        <h3 class="mzp-u-title-xs"><a href="https://developer.mozilla.org/curriculum/?utm_source=www.mozilla.org&utm_medium=referral&utm_campaign=fxdev-whatsnew" rel="external">{{ ftl('firefox-developer-mdn-curriculum') }}</a></h3>
-        <p>{{ ftl('firefox-developer-a-structured-guide') }}</p>
+        <h3 class="mzp-u-title-xs"><a href="https://developer.mozilla.org/en-US/blog/{{ utm_params }}" rel="external">{{ ftl('firefox-developer-mdn-blog') }}</a></h3>
+        <p>{{ ftl('firefox-developer-mdn-unlock-the-world') }}</p>
       </div>
       <div>
-        <h3 class="mzp-u-title-xs"><a href="https://developer.mozilla.org/plus/?utm_source=www.mozilla.org&utm_medium=referral&utm_campaign=fxdev-whatsnew" rel="external">{{ ftl('firefox-developer-mdn-plus') }}</a></h3>
-        <p>{{ ftl('firefox-developer-support-mdn-and') }}</p>
+        <h3 class="mzp-u-title-xs"><a href="https://developer.mozilla.org/en-US/plus/updates/{{ utm_params }}" rel="external">{{ ftl('firefox-developer-mdn-updates') }}</a></h3>
+        <p>{{ ftl('firefox-developer-mdn-the-web-doesnt-have') }}</p>
       </div>
     </div>
   </div>

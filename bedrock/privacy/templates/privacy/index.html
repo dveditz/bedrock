@@ -12,7 +12,7 @@
 {% block body_class %}mzp-t-mozilla format-none{% endblock%}
 {% block body_id %}privacy-landing{% endblock %}
 
-{% block article_header_logo %}{{ static('img/trademarks/logo-mozm.png') }}{% endblock %}
+{% block article_header_logo %}{{ static('img/trademarks/symbol.svg') }}{% endblock %}
 
 {% do doc.select('body > section > section ul')|htmlattr(class="mzp-u-list-styled") %}
 {% do doc.select('body > section > section ol')|htmlattr(class="mzp-u-list-styled") %}
@@ -35,7 +35,7 @@
 {% endblock %}
 {% block footnote %}
   <section id="contact" class="section-content">
-    <h4>{{ ftl('privacy-index-contact-mozilla') }}</h4>
+    <h2>{{ ftl('privacy-index-contact-mozilla') }}</h2>
     <p>{{ ftl('privacy-index-if-you-want-to-make-a-correction') }}</p>
 
     <p lang="en" dir="ltr" itemscope itemtype="http://schema.org/Organization">

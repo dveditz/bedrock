@@ -6,17 +6,11 @@
 
 # HTML page title. Replace "English (US)" with your local language.
 firefox-all-download-the-firefox-v2 = Download { -brand-name-firefox } in English (US) and more than 90 other languages
-# Obsolete string (expires 2024-10-30)
-firefox-all-download-the-firefox = Download the { -brand-name-firefox-browser } in English (US) and more than 90 other languages
+
 
 # HTML page description, also used as the introductory text.
 firefox-all-everyone-deserves-access-v2 = Everyone deserves access to the internet — your language should never be a barrier. That’s why — with the help of dedicated volunteers around the world — we make { -brand-name-firefox } available in more than 90 languages.
-# Obsolete string (expires 2024-10-30)
-firefox-all-everyone-deserves-access = Everyone deserves access to the internet — your language should never be a barrier. That’s why — with the help of dedicated volunteers around the world — we make the { -brand-name-firefox-browser } available in more than 90 languages.
 
-# Variables:
-#   $product_label (string) e.g. Firefox, Firefox Nightly
-firefox-all-qrcode = Scan QR code to get <em>{ $product_name }</em>
 firefox-all-choose-browser = Choose a browser to continue
 firefox-all-choose-platform = Choose a platform to continue
 firefox-all-choose-language = Choose a language to continue
@@ -29,14 +23,8 @@ firefox-all-down-arrow = Choose from the list below
 
 # Used as an accessible label for a help button. The text is replaced with a "?" icon.
 firefox-all-get-help = Get help
-# Obsolete string (expires 2024-10-30)
-firefox-all-browser = Browser:
 firefox-all-browser-v2 = 1. Browser:
-# Obsolete string (expires 2024-10-30)
-firefox-all-platform = Platform:
 firefox-all-platform-v2 = 2. Platform:
-# Obsolete string (expires 2024-10-30)
-firefox-all-language = Language:
 firefox-all-language-v2 = 3. Language:
 firefox-all-download = 4. Download:
 firefox-all-desktop = Desktop
@@ -88,15 +76,7 @@ firefox-all-product-send-link = Send a download link to your phone
 #   $url (url) - link to https://support.mozilla.org/kb/choosing-firefox-cpu-architecture-windows-os
 firefox-all-choose-a-32-bit-installer = Choose a 32-bit installer for computers with 32-bit processors — or for older or less powerful computers. <a href="{ $url }">If you aren’t sure</a> whether to choose a 64-bit or 32-bit installer, we recommend you go with 32-bit.
 
-# Variables:
-#   $product_label (string) e.g. Firefox, Firefox Nightly
-#   $platform (string) e.g. Windows, macOS, Linux
-#   $locale(string) e.g. English (US), German, French
-firefox-all-download-product-for = Download { $product_label } for { $platform } in { $locale }
-
 firefox-all-msi-installers = MSI installers
-firefox-all-which-version = Which version would you like?
-firefox-all-select-your-preferred-installer = Select your preferred installer
 firefox-all-select-your-preferred-language = Select your preferred language
 firefox-all-learn-about-installers = Learn about installers
 firefox-all-product-firefox = { -brand-name-firefox }

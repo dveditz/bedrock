@@ -13,6 +13,8 @@ ui-watch-the-video = Watch the video
 ui-replay = Replay
 ui-share = Share
 ui-menu = Menu
+# Short for Table of Contents
+ui-contents = Contents
 ui-please-turn-on-javascript = Please turn on JavaScript to display this page correctly.
 ui-show-more = Show More
 ui-show-less = Show Less
@@ -20,6 +22,8 @@ ui-show-all = Show All
 ui-hide-all = Hide All
 ui-learn-more = Learn more
 ui-view = View
+ui-pause-animation = Pause animation
+ui-play-animation = Play animation
 
 # An accessible label used to describe the purpose of a cross-promotional page element.
 ui-promo-label = Promotion

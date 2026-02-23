@@ -217,8 +217,8 @@ describe('management.es6.js', function () {
             );
 
             // total number of active newsletters to display
-            expect(newsletters.length).toEqual(9);
-            expect(active.length).toEqual(9);
+            expect(newsletters.length).toEqual(8);
+            expect(active.length).toEqual(8);
 
             // number of subscribed newsletters to display
             expect(subscribed.length).toEqual(3);
@@ -231,7 +231,7 @@ describe('management.es6.js', function () {
             expect(show.length).toEqual(5);
 
             // FxA newsletters to display
-            expect(fxaNewsletters.length).toEqual(3);
+            expect(fxaNewsletters.length).toEqual(2);
 
             expect(newsletters[0].title).toEqual('Firefox Accounts Tips');
             expect(newsletters[0].newsletter).toEqual(
@@ -243,37 +243,29 @@ describe('management.es6.js', function () {
             expect(newsletters[1].newsletter).toEqual('test-pilot');
             expect(newsletters[1].subscribed).toBeFalse();
 
-            expect(newsletters[2].title).toEqual(
-                'Take Action for the Internet'
-            );
-            expect(newsletters[2].newsletter).toEqual(
-                'take-action-for-the-internet'
-            );
-            expect(newsletters[2].subscribed).toBeFalse();
+            expect(newsletters[2].title).toEqual('Firefox News');
+            expect(newsletters[2].newsletter).toEqual('mozilla-and-you');
+            expect(newsletters[2].subscribed).toBeTrue();
 
-            expect(newsletters[3].title).toEqual('Firefox News');
-            expect(newsletters[3].newsletter).toEqual('mozilla-and-you');
+            expect(newsletters[3].title).toEqual('Mozilla News');
+            expect(newsletters[3].newsletter).toEqual('mozilla-foundation');
             expect(newsletters[3].subscribed).toBeTrue();
 
-            expect(newsletters[4].title).toEqual('Mozilla News');
-            expect(newsletters[4].newsletter).toEqual('mozilla-foundation');
-            expect(newsletters[4].subscribed).toBeTrue();
+            expect(newsletters[4].title).toEqual('Mozilla Festival');
+            expect(newsletters[4].newsletter).toEqual('mozilla-festival');
+            expect(newsletters[4].subscribed).toBeFalse();
 
-            expect(newsletters[5].title).toEqual('Mozilla Festival');
-            expect(newsletters[5].newsletter).toEqual('mozilla-festival');
+            expect(newsletters[5].title).toEqual('Insights');
+            expect(newsletters[5].newsletter).toEqual('internet-health-report');
             expect(newsletters[5].subscribed).toBeFalse();
 
-            expect(newsletters[6].title).toEqual('Insights');
-            expect(newsletters[6].newsletter).toEqual('internet-health-report');
+            expect(newsletters[6].title).toEqual('Common Voice');
+            expect(newsletters[6].newsletter).toEqual('common-voice');
             expect(newsletters[6].subscribed).toBeFalse();
 
-            expect(newsletters[7].title).toEqual('Common Voice');
-            expect(newsletters[7].newsletter).toEqual('common-voice');
-            expect(newsletters[7].subscribed).toBeFalse();
-
-            expect(newsletters[8].title).toEqual('Mozilla Community');
-            expect(newsletters[8].newsletter).toEqual('about-mozilla');
-            expect(newsletters[8].subscribed).toBeTrue();
+            expect(newsletters[7].title).toEqual('Mozilla Community');
+            expect(newsletters[7].newsletter).toEqual('about-mozilla');
+            expect(newsletters[7].subscribed).toBeTrue();
         });
 
         it('should not include FxA newsletters if not an FxA user', function () {
@@ -464,7 +456,7 @@ describe('management.es6.js', function () {
             const rows = document.querySelectorAll(
                 '.newsletter-table tbody > tr'
             );
-            expect(rows.length).toEqual(10);
+            expect(rows.length).toEqual(9);
 
             expect(rows[0].querySelector('th > h4').innerText).toEqual(
                 'Firefox Accounts Tips'
@@ -476,14 +468,14 @@ describe('management.es6.js', function () {
                 rows[0].querySelector('td > input[type="checkbox"]').checked
             ).toBeFalsy();
 
-            expect(rows[4].querySelector('th > h4').innerText).toEqual(
+            expect(rows[3].querySelector('th > h4').innerText).toEqual(
                 'Mozilla News'
             );
             expect(
-                rows[4].querySelector('td > input[type="checkbox"]').value
+                rows[3].querySelector('td > input[type="checkbox"]').value
             ).toEqual('mozilla-foundation');
             expect(
-                rows[4].querySelector('td > input[type="checkbox"]').checked
+                rows[3].querySelector('td > input[type="checkbox"]').checked
             ).toBeTruthy();
         });
     });
@@ -849,8 +841,8 @@ describe('management.es6.js', function () {
             });
         });
 
-        it('should render an error message for an invalid / expired token', function () {
-            const error = { statusText: 'Not Found' };
+        it('should redirect to recovery page for an invalid / expired token (403)', function () {
+            const error = { status: 403, statusText: 'Forbidden' };
 
             spyOn(FormUtils, 'getUserToken').and.returnValue(TOKEN_MOCK);
             spyOn(NewsletterManagementForm, 'getUserData').and.returnValue(
@@ -859,19 +851,41 @@ describe('management.es6.js', function () {
             spyOn(
                 NewsletterManagementForm,
                 'getNewsletterData'
-            ).and.returnValue(window.Promise.reject(newsletterData));
+            ).and.returnValue(window.Promise.reject(error));
             spyOn(
                 NewsletterManagementForm,
                 'getNewsletterStrings'
             ).and.returnValue(window.Promise.resolve(stringData));
+            spyOn(NewsletterManagementForm, 'redirectToRecoveryPage');
 
             return NewsletterManagementForm.init().then(() => {
-                const error = document
-                    .querySelector('.mzp-c-form-errors li:nth-child(1)')
-                    .innerHTML.trim();
-                expect(error).toEqual(
-                    'The supplied link has expired. Please <a href="/en-US/newsletter/recovery/">request a new link here</a>.'
-                );
+                expect(
+                    NewsletterManagementForm.redirectToRecoveryPage
+                ).toHaveBeenCalledWith({ expired: true });
+            });
+        });
+
+        it('should redirect to recovery page for an invalid / expired token (404)', function () {
+            const error = { status: 404, statusText: 'Not Found' };
+
+            spyOn(FormUtils, 'getUserToken').and.returnValue(TOKEN_MOCK);
+            spyOn(NewsletterManagementForm, 'getUserData').and.returnValue(
+                window.Promise.reject(error)
+            );
+            spyOn(
+                NewsletterManagementForm,
+                'getNewsletterData'
+            ).and.returnValue(window.Promise.reject(error));
+            spyOn(
+                NewsletterManagementForm,
+                'getNewsletterStrings'
+            ).and.returnValue(window.Promise.resolve(stringData));
+            spyOn(NewsletterManagementForm, 'redirectToRecoveryPage');
+
+            return NewsletterManagementForm.init().then(() => {
+                expect(
+                    NewsletterManagementForm.redirectToRecoveryPage
+                ).toHaveBeenCalledWith({ expired: true });
             });
         });
 
@@ -929,14 +943,30 @@ describe('management.es6.js', function () {
     });
 
     describe('onSubmit', function () {
-        let xhr;
         let xhrRequests = [];
 
         beforeEach(function () {
-            xhr = sinon.useFakeXMLHttpRequest();
-            xhr.onCreate = (req) => {
-                xhrRequests.push(req);
+            xhrRequests = [];
+
+            function FakeXHR() {
+                this.headers = {};
+                this.readyState = 0;
+                this.status = 0;
+                this.responseText = '';
+                this.onload = null;
+
+                xhrRequests.push(this);
+            }
+
+            FakeXHR.prototype.open = jasmine.createSpy('open');
+            FakeXHR.prototype.setRequestHeader = function (header, value) {
+                this.headers[header] = value;
             };
+            FakeXHR.prototype.send = jasmine.createSpy('send');
+
+            spyOn(window, 'XMLHttpRequest').and.callFake(function () {
+                return new FakeXHR();
+            });
 
             spyOn(FormUtils, 'getUserToken').and.returnValue(TOKEN_MOCK);
             spyOn(NewsletterManagementForm, 'getUserData').and.returnValue(
@@ -956,7 +986,6 @@ describe('management.es6.js', function () {
         });
 
         afterEach(function () {
-            xhr.restore();
             xhrRequests = [];
         });
 
@@ -966,16 +995,19 @@ describe('management.es6.js', function () {
             return NewsletterManagementForm.init().then(() => {
                 document.querySelector('button[type="submit"]').click();
 
-                expect(xhrRequests[0].url).toEqual(
-                    `https://basket.mozilla.org/news/user/${TOKEN_MOCK}/`
+                const req = xhrRequests[0];
+                req.status = 200;
+                req.readyState = 4;
+                req.responseText = '{"status": "ok"}';
+                req.onload({ target: req });
+
+                expect(req.open).toHaveBeenCalledWith(
+                    'POST',
+                    `https://basket.mozilla.org/news/user/${TOKEN_MOCK}/`,
+                    true
                 );
-                expect(xhrRequests[0].requestBody).toEqual(
+                expect(req.send).toHaveBeenCalledWith(
                     'country=us&lang=en&newsletters=mozilla-and-you%2Cmozilla-foundation%2Cabout-mozilla&optin=Y&source_url=https%3A%2F%2Fwww.mozilla.org%2Fen-US%2Fnewsletter%2Fexisting%2F'
-                );
-                xhrRequests[0].respond(
-                    200,
-                    { 'Content-Type': 'application/json' },
-                    '{"status": "ok"}'
                 );
                 expect(
                     NewsletterManagementForm.onFormSuccess
@@ -990,13 +1022,14 @@ describe('management.es6.js', function () {
                 document.querySelector('input[value="common-voice"]').click();
                 document.querySelector('button[type="submit"]').click();
 
-                expect(xhrRequests[0].requestBody).toEqual(
+                const req = xhrRequests[0];
+                req.status = 200;
+                req.readyState = 4;
+                req.responseText = '{"status": "ok"}';
+                req.onload({ target: req });
+
+                expect(req.send).toHaveBeenCalledWith(
                     'country=us&lang=en&newsletters=mozilla-and-you%2Cmozilla-foundation%2Ccommon-voice%2Cabout-mozilla&optin=Y&source_url=https%3A%2F%2Fwww.mozilla.org%2Fen-US%2Fnewsletter%2Fexisting%2F'
-                );
-                xhrRequests[0].respond(
-                    200,
-                    { 'Content-Type': 'application/json' },
-                    '{"status": "ok"}'
                 );
                 expect(
                     NewsletterManagementForm.onFormSuccess
@@ -1013,13 +1046,14 @@ describe('management.es6.js', function () {
                     .click();
                 document.querySelector('button[type="submit"]').click();
 
-                expect(xhrRequests[0].requestBody).toEqual(
+                const req = xhrRequests[0];
+                req.status = 200;
+                req.readyState = 4;
+                req.responseText = '{"status": "ok"}';
+                req.onload({ target: req });
+
+                expect(req.send).toHaveBeenCalledWith(
                     'country=us&lang=en&newsletters=mozilla-foundation%2Cabout-mozilla&optin=Y&source_url=https%3A%2F%2Fwww.mozilla.org%2Fen-US%2Fnewsletter%2Fexisting%2F'
-                );
-                xhrRequests[0].respond(
-                    200,
-                    { 'Content-Type': 'application/json' },
-                    '{"status": "ok"}'
                 );
                 expect(
                     NewsletterManagementForm.onFormSuccess
@@ -1034,15 +1068,18 @@ describe('management.es6.js', function () {
                 document.getElementById('id_remove_all').click();
                 document.querySelector('button[type="submit"]').click();
 
-                expect(xhrRequests[0].url).toEqual(
-                    `https://basket.mozilla.org/news/unsubscribe/${TOKEN_MOCK}/`
+                const req = xhrRequests[0];
+                req.status = 200;
+                req.readyState = 4;
+                req.responseText = '{"status": "ok"}';
+                req.onload({ target: req });
+
+                expect(req.open).toHaveBeenCalledWith(
+                    'POST',
+                    `https://basket.mozilla.org/news/unsubscribe/${TOKEN_MOCK}/`,
+                    true
                 );
-                expect(xhrRequests[0].requestBody).toEqual('optout=Y');
-                xhrRequests[0].respond(
-                    200,
-                    { 'Content-Type': 'application/json' },
-                    '{"status": "ok"}'
-                );
+                expect(req.send).toHaveBeenCalledWith('optout=Y');
                 expect(
                     NewsletterManagementForm.onUnsubscribeAll
                 ).toHaveBeenCalled();
@@ -1075,11 +1112,14 @@ describe('management.es6.js', function () {
 
             return NewsletterManagementForm.init().then(() => {
                 document.querySelector('button[type="submit"]').click();
-                xhrRequests[0].respond(
-                    400,
-                    { 'Content-Type': 'application/json' },
-                    '{"status": "error", "desc": "Unknown non-helpful error"}'
-                );
+
+                const req = xhrRequests[0];
+                req.status = 400;
+                req.readyState = 4;
+                req.responseText =
+                    '{"status": "error", "desc": "Unknown non-helpful error"}';
+                req.onload({ target: req });
+
                 expect(
                     NewsletterManagementForm.onFormSuccess
                 ).not.toHaveBeenCalled();

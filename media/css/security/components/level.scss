@@ -2,16 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-$font-path: '/media/protocol/fonts';
-$image-path: '/media/protocol/img';
-
-@import '~@mozilla-protocol/core/protocol/css/includes/lib';
+@use '~@mozilla-protocol/core/protocol/css/includes/lib' as *;
 
 // Security impact levels
 
 .level-item {
     padding: 0.714rem 0 0.5rem;
-    position: relative;
 }
 
 .level {
@@ -26,6 +22,7 @@ $image-path: '/media/protocol/img';
     line-height: 1;
     padding: 4px;
     min-width: 90px;
+    margin-inline-end: 0.5rem;
 
     &.moderate {
         background: $color-yellow-10;
@@ -46,12 +43,14 @@ $image-path: '/media/protocol/img';
 // move levels to the left once there's enough space
 @media #{$mq-sm} {
     .level-item {
-        padding-left: 110px;
+        a {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
         .level {
-            left: 0;
-            position: absolute;
-            top: 1rem;
+            height: fit-content;
         }
     }
 }
@@ -60,8 +59,7 @@ $image-path: '/media/protocol/img';
 .level-heading {
     position: relative;
 
-    a,
-    a:visited {
+    a {
         color: inherit;
         text-decoration: none;
 

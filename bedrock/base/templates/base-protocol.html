@@ -10,6 +10,8 @@
   <head>
     <meta charset="utf-8">{# Note: Must be within first 512 bytes of page #}
 
+    {% include 'includes/transcend-consent.html' %}
+
     <!--[if !IE]><!-->
     {{ js_bundle('site') }}
 
@@ -34,7 +36,7 @@
     <meta property="og:site_name" content="Mozilla">
     <meta property="og:locale" content="{{ LANG|replace("-", "_") }}">
     <meta property="og:url" content="{% filter trim|absolute_url %}{% block page_og_url %}{{ settings.CANONICAL_URL + '/' + LANG + canonical_path }}{% endblock %}{% endfilter %}">
-    <meta property="og:image" content="{% filter trim|absolute_url %}{% block page_image %}{{ static('img/mozorg/mozilla-256.jpg') }}{% endblock %}{% endfilter %}">
+    <meta property="og:image" content="{% filter trim|absolute_url %}{% block page_image %}{{ static('img/m24/og.png') }}{% endblock %}{% endfilter %}">
     <meta property="og:title" content="{% filter striptags %}{% block page_og_title %}{{ self.page_title_full() }}{% endblock %}{% endfilter %}">
     <meta property="og:description" content="{% filter striptags %}{% block page_og_desc %}{{ self.page_desc() }}{% endblock %}{% endfilter %}">
     <meta property="fb:page_id" content="{% block facebook_id %}262134952380{# facebook.com/mozilla #}{% endblock %}">
@@ -55,8 +57,6 @@
     {# keep the verification for the previous official mastodon profile #}
     <link href="https://mastodon.social/@mozilla" rel="me">
 
-    {{ l10n_css() }}
-
     <!--[if lt IE 9]>
       {# Only needed for IE before v9 #}
       <script src="{{ static('js/ie/libs/html5shiv.js') }}"></script>
@@ -72,16 +72,13 @@
     <!--[if !IE]><!-->
     {# Global styles, hidden from IE9 and lower #}
     {% block site_css %}
-      {% if switch('m24-website-refresh') %}
-        {{ css_bundle('protocol-mozilla-2024') }}
-        {% if LANG.startswith('en-') %}
-          {{ css_bundle('m24-navigation-and-footer') }}
-        {% else %}
-          {{ css_bundle('legacy-navigation-and-footer') }}
-        {% endif %}
+      {{ css_bundle('protocol-mozilla') }}
+      {% if ftl_file_is_active('navigation_refresh') and ftl_file_is_active('footer-refresh') %}
+        {{ css_bundle('m24-navigation-and-footer') }}
       {% else %}
-        {{ css_bundle('protocol-firefox') }}
+        {{ css_bundle('legacy-navigation-and-footer') }}
       {% endif %}
+      {{ l10n_css() }}
     {% endblock %}
 
     {# Page-specific styles, hidden from IE9 and lower #}
@@ -94,7 +91,9 @@
 
     {% block js_pretrack %}{# include JavaScript that must be run pre GA tracking here #}{% endblock %}
     {% block google_analytics %}
-      {% include 'includes/google-analytics.html' %}
+      <!--[if IE 9]><!-->
+        {% include 'includes/google-analytics.html' %}
+      <!--<![endif]-->
     {% endblock %}
   </head>
 
@@ -142,7 +141,7 @@
         {{ js_bundle('lib') }}
         {{ js_bundle('fxa') }}
         {{ js_bundle('data') }}
-        {% if switch('m24-website-refresh', ['en']) %}
+        {% if ftl_file_is_active('navigation_refresh') and ftl_file_is_active('footer-refresh') %}
           {{ js_bundle('m24-ui') }}
         {% else %}
           {{ js_bundle('ui') }}
@@ -150,7 +149,7 @@
       <!--<![endif]-->
 
       <!--[if IE 9]>
-        {# IE9 has its own lib JS bundle containing dependencies for anaytics and consent management. #}
+        {# IE9 has its own lib JS bundle containing dependencies for analytics and consent management. #}
         {{ js_bundle('lib-ie') }}
       <![endif]-->
     {% endblock %}

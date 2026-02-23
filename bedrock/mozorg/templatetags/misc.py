@@ -16,12 +16,12 @@ from django.template.defaulttags import CsrfTokenNode
 from django.template.loader import render_to_string
 from django.utils.encoding import smart_str
 
-import bleach
 import jinja2
 from django_jinja import library
 from markupsafe import Markup
 from product_details import product_details
 
+from bedrock.base.sanitization import strip_all_tags
 from bedrock.base.templatetags.helpers import static, urlparams
 
 ALL_FX_PLATFORMS = ("windows", "linux", "mac", "android", "ios")
@@ -131,8 +131,7 @@ def l10n_css(ctx):
 
     For a locale that has locale-specific stylesheet, this would output:
 
-        <link rel="stylesheet" media="screen,projection,tv"
-              href="{{ STATIC_URL }}css/l10n/{{ LANG }}/intl.css">
+        <link rel="stylesheet" href="{{ STATIC_URL }}css/l10n/{{ LANG }}/intl.css">
 
     For a locale that doesn't have any locale-specific stylesheet, this would
     output nothing.
@@ -149,7 +148,7 @@ def l10n_css(ctx):
     locale = getattr(ctx["request"], "locale", "en-US")
 
     if _l10n_media_exists("css", locale, "intl.css"):
-        markup = '<link rel="stylesheet" media="screen,projection,tv" href=' '"%s">' % static(path.join("css", "l10n", locale, "intl.css"))
+        markup = '<link rel="stylesheet" href="%s">' % static(path.join("css", "l10n", locale, "intl.css"))
     else:
         markup = ""
 
@@ -246,6 +245,8 @@ def picture(ctx={}, url=None, sources=[], optional_attributes=None):
         source_srcset = source.pop("srcset", False)
         source_type = source.pop("type", False)
         source_sizes = source.pop("sizes", False)
+        source_width = source.pop("width", False)
+        source_height = source.pop("height", False)
 
         # srcset
         if source_srcset:
@@ -274,7 +275,9 @@ def picture(ctx={}, url=None, sources=[], optional_attributes=None):
         type_markup = f' type="{source_type}"' if source_type else ""
         srcset_markup = f' srcset="{final_srcset}"' if final_srcset != "" else ""
         sizes_markup = f' sizes="{final_sizes}"' if final_sizes != "" else ""
-        source_markup = f"<source{media_markup}{type_markup}{srcset_markup}{sizes_markup}>"
+        width_markup = f' width="{source_width}"' if source_width else ""
+        height_markup = f' height="{source_height}"' if source_height else ""
+        source_markup = f"<source{media_markup}{type_markup}{srcset_markup}{sizes_markup}{width_markup}{height_markup}>"
         final_sources.append(source_markup)
 
     markup = f'<picture>{"".join(final_sources)}<img {loading}src="{url}" alt="{alt}"{attrs}></picture>'
@@ -359,89 +362,19 @@ def donate_url(ctx, location=""):
 
     This would output:
 
-        https://foundation.mozilla.org/donate/
+        https://www.mozillafoundation.org/donate/
 
         {{ donate(location='contribute')}}
 
     This would output:
 
-        https://foundation.mozilla.org/?form=contribute
+        https://www.mozillafoundation.org/?form=contribute
 
     """
 
     location = "?form=" + location if location else "donate/"
 
     return settings.DONATE_LINK.format(location=location)
-
-
-@library.global_function
-@jinja2.pass_context
-def firefox_twitter_url(ctx):
-    """Output a link to Twitter taking locales into account.
-
-    Uses the locale from the current request. Checks to see if we have
-    a Twitter account that match this locale, returns the localized account
-    url or falls back to the US account url if not.
-
-    Examples
-    ========
-
-    In Template
-    -----------
-
-        {{ firefox_twitter_url() }}
-
-    For en-US this would output:
-
-        https://twitter.com/firefox
-
-    For es-ES this would output:
-
-        https://twitter.com/firefox_es
-
-    For pt-BR this would output:
-
-        https://twitter.com/firefoxbrasil
-
-    """
-    locale = getattr(ctx["request"], "locale", "en-US")
-    if locale not in settings.FIREFOX_TWITTER_ACCOUNTS:
-        locale = "en-US"
-
-    return settings.FIREFOX_TWITTER_ACCOUNTS[locale]
-
-
-@library.global_function
-@jinja2.pass_context
-def mozilla_twitter_url(ctx):
-    """Output a link to Twitter taking locales into account.
-
-    Uses the locale from the current request. Checks to see if we have
-    a Twitter account that match this locale, returns the localized account
-    url or falls back to the US account url if not.
-
-    Examples
-    ========
-
-    In Template
-    -----------
-
-        {{ mozilla_twitter_url() }}
-
-    For en-US this would output:
-
-        https://twitter.com/mozilla
-
-    For DE this would output:
-
-        https://twitter.com/mozilla_germany
-
-    """
-    locale = getattr(ctx["request"], "locale", "en-US")
-    if locale not in settings.MOZILLA_TWITTER_ACCOUNTS:
-        locale = "en-US"
-
-    return settings.MOZILLA_TWITTER_ACCOUNTS[locale]
 
 
 @library.global_function
@@ -543,7 +476,11 @@ def slugify(text):
 
 @library.filter
 def bleach_tags(text):
-    return bleach.clean(text, tags=set(), strip=True).replace("&amp;", "&")
+    """Strip all HTML tags and convert entities to characters for plain text output.
+
+    Used in .txt email templates where HTML entities should become real characters.
+    """
+    return strip_all_tags(text).replace("&amp;", "&")
 
 
 # from jingo
@@ -590,7 +527,18 @@ def app_store_url(ctx, product, campaign=None):
     """Returns a localised app store URL for a given product"""
     locale = getattr(ctx["request"], "locale", "en-US")
     countries = settings.APPLE_APPSTORE_COUNTRY_MAP
-    params = "?pt=373246&ct={cmp}&mt=8"
+
+    # Map product names to tracking product codes
+    product_mapping = {
+        "firefox": "firefox_mobile",
+        "firefox_beta": "firefox_mobile",
+        "firefox_nightly": "firefox_mobile",
+        "focus": "focus",
+        "klar": "klar",
+        "vpn": "vpn",
+    }
+
+    tracking_product = product_mapping.get(product, "unrecognized")
 
     if product == "focus" and locale == "de":
         base_url = getattr(settings, "APPLE_APPSTORE_KLAR_LINK")
@@ -598,7 +546,11 @@ def app_store_url(ctx, product, campaign=None):
         base_url = getattr(settings, f"APPLE_APPSTORE_{product.upper()}_LINK")
 
     if campaign:
-        base_url = base_url + params.format(cmp=campaign)
+        params = "?mz_pr={tp}&pt=373246&ct={cmp}&mt=8"
+        base_url = base_url + params.format(tp=tracking_product, cmp=campaign)
+    else:
+        params = "?mz_pr={tp}"
+        base_url = base_url + params.format(tp=tracking_product)
 
     if locale in countries:
         return base_url.format(country=countries[locale])
@@ -637,6 +589,16 @@ def ms_store_url(ctx, product="firefox", mode="mini", campaign=None, handler=Non
     See https://apps.microsoft.com/badge for details.
     """
 
+    channel_mapping = {
+        "firefox": "release",
+        "firefox_beta": "beta",
+    }
+
+    channel = channel_mapping.get(product, "unrecognized")
+
+    if product not in channel_mapping:
+        product = "firefox"
+
     if handler == "ms-windows-store":
         base_url = getattr(settings, f"MICROSOFT_WINDOWS_STORE_{product.upper()}_DIRECT_LINK")
     else:
@@ -645,6 +607,7 @@ def ms_store_url(ctx, product="firefox", mode="mini", campaign=None, handler=Non
     params = {
         "mode": mode,
         "cid": campaign,
+        "mz_cn": channel,
     }
 
     return urlparams(base_url, **params)
@@ -704,31 +667,9 @@ def _fxa_product_button(
     if class_name:
         css_class += f" {class_name}"
 
-    markup = f'<a href="{href}" data-action="{settings.FXA_ENDPOINT}" class="{css_class}" {attrs}>' f"{button_text}" f"</a>"
+    markup = f'<a href="{href}" data-action="{settings.FXA_ENDPOINT}" class="{css_class}" {attrs}>{button_text}</a>'
 
     return Markup(markup)
-
-
-@library.global_function
-@jinja2.pass_context
-def pocket_fxa_button(
-    ctx, entrypoint, button_text, class_name=None, is_button_class=True, include_metrics=True, optional_parameters=None, optional_attributes=None
-):
-    """
-    Render a getpocket.com link with required params for Mozilla account authentication.
-
-    Examples
-    ========
-
-    In Template
-    -----------
-
-        {{ pocket_fxa_button(entrypoint='mozilla.org-firefox-pocket', button_text='Try Pocket Now') }}
-    """
-    product_url = "https://getpocket.com/ff_signup"
-    return _fxa_product_button(
-        product_url, entrypoint, button_text, class_name, is_button_class, include_metrics, optional_parameters, optional_attributes
-    )
 
 
 @library.global_function

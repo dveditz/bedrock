@@ -5,45 +5,135 @@
 #}
 
 {#
-  Grid Tile
-  HTML Import: {% from "macros-m24.html" import grid_tile with context %}
+  Gallery Tile
+  HTML Import: {% from "macros-m24.html" import gallery_tile with context %}
   CSS Import: @import '[path to]/m24/grid';
   Macro Parameters:
+    body: String indicating paragraph text (usually a translation id wrapped in ftl function).
     class: String providing modifier class(es) to the tile component.
     cta_text: String indicating CTA text (usually a translation id wrapped in an ftl function).
-    desc: String indicating paragraph text (usually a translation id wrapped in ftl function).
-    heading_level: Number indicating heading level for title text. Should be based on semantic meaning, not presentational styling.
-    image: Image to be used in the tile. Can pass an <img> element, resp_img or picture Python helpers.
+    heading (Required): String indicating heading text (usually a translation id wrapped in ftl function).
+    heading_level: Number indicating heading level. Should be based on semantic meaning, not presentational styling.
+    image_desktop: Image to be used in the tile at desktop sizes. Can pass an <img> element, resp_img or picture Python helpers.
+    image_mobile: Image to be used in the tile at desktop sizes. Can pass an <img> element, resp_img or picture Python helpers.
     link_attributes: A generic parameter to add any extra attributes to the CTA link, such as target, rel, or data attributes for GA tracking. Note that the quotes will pass through unescaped.
     link_url (Required): String or url helper function provides href value for the tile link.
-    title (Required): String indicating heading text (usually a translation id wrapped in ftl function).
+    tag: A category tag for this gallery tile (e.g. product, program, event) (usually a translation id wrapped in ftl function).
 #}
-{% macro grid_tile(
+{% macro gallery_tile(
+  body=None,
   class=None,
   cta_text=None,
-  desc=None,
+  heading='',
   heading_level=3,
   image=None,
   link_attributes=None,
   link_url=None,
-  title=''
+  tag=''
 ) -%}
-<div class="m24-c-grid-tile{% if class %} {{ class }}{% endif %}">
-  <a href="{{ link_url }}" class="m24-c-grid-tile-link"{% if link_attributes %} {{ link_attributes|safe }}{% endif %}>
-    {% if image %}
-    <div class="m24-c-grid-tile-image">{{ image|safe }}</div>
+<div class="m24-c-gallery-tile {% if class %} {{ class }}{% endif %}">
+    <h{{ heading_level }} class="m24-c-gallery-tile-heading">
+      <a href="{{ link_url }}" class="m24-c-gallery-tile-link"{% if link_attributes %} {{ link_attributes|safe }}{% endif %}>
+        <span>{{ heading }}</span>
+      </a>
+  </h{{ heading_level }}>
+  {% if image %}
+  <div class="m24-c-gallery-tile-image">
+    {{ image|safe }}
+  </div>
+  {% endif %}
+  {% if tag %}
+    <div class="m24-c-gallery-tile-tag">
+      {{ tag }}
+    </div>
+  {% endif %}
+  <div class="m24-c-gallery-tile-content">
+    {% if body %}
+      <p class="m24-c-gallery-tile-body">{{ body }}</p>
     {% endif %}
-    <div class="m24-c-grid-tile-content">
-      <h{{ heading_level }} class="m24-c-grid-tile-title"><span>{{ title }}</span></h{{ heading_level }}>
-      {% if desc %}
-      <p class="m24-c-grid-tile-desc">{{ desc }}</p>
-      {% endif %}
-      {% if cta_text %}
-      <p class="m24-c-grid-tile-cta">
+    {% if cta_text %}
+      <p class="m24-c-gallery-tile-cta">
         <span>{{ cta_text }}</span>
       </p>
+    {% endif %}
+    </div>
+</div>
+{%- endmacro %}
+
+{#
+  Springboard Item
+  HTML Import: {% from "macros-m24.html" import springboard_item with context %}
+  CSS Import: @import '[path to]/m24/foo';
+  Description: The springboard component links off to media (i.e. articles, podcasts, and videos) on other sites. Each item is a row.
+  Macro Parameters:
+    author: Author of the media.
+    class: String providing modifier class(es) to the item.
+    link_attributes: A generic parameter to add any extra attributes to the CTA link, such as target, rel, or data attributes for GA tracking. Note that the quotes will pass through unescaped.
+    link_url (Required): String or url helper function provides href value for item.
+    preview: Blurb / summary of the media. (usually a translation id wrapped in ftl function).
+    topic: One or two word topic of the item. Perhaps one of the things the item is "tagged" with if it's a blog post. (usually a translation id wrapped in ftl function).
+    type: Type of media the item links to. Probably one of podcast, article, video. (usually a translation id wrapped in ftl function).
+    type_icon: (Do not translate) Last word of the icon class. Must be configured in the CSS. Currently supports: podcast, article, video.
+#}
+{% macro springboard_item(
+  author=None,
+  class=None,
+  link_attributes=None,
+  link_url=None,
+  preview=None,
+  topic=None,
+  type=None,
+  type_icon=''
+) -%}
+
+<li class="m24-c-springboard-item {{ class }}">
+  <a href="{{ link_url }}" class="m24-c-springboard-link" {{ link_attributes }}>
+    <div class="m24-c-springboard-thumb">
+      {% if type_icon %}
+        <span class="m24-c-springboard-icon m24-c-springboard-icon-{{ type_icon|lower }}"></span>
       {% endif %}
     </div>
+    <div class="m24-c-springboard-type">
+      {{ type }}
+    </div>
+    <div class="m24-c-springboard-author">{{ author }}</div>
+    <div class="m24-c-springboard-topic">{{ topic }}</div>
+    <div class="m24-c-springboard-preview">{{ preview }}</div>
   </a>
+</li>
+{%- endmacro %}
+
+{#
+  Donate Section
+  HTML Import: {% from "macros-m24.html" import m24_donate with context %}
+  CSS Bundle: Requires m24-home CSS bundle
+  Usage: Use with {% call %} block to pass body content.
+  Macro Parameters:
+    heading (Required): String for the section heading.
+    heading_level: Number indicating heading level for title text. Should be based on semantic meaning, not presentational styling. Defaults to 2.
+    image (Required): Pre-rendered image HTML (from resp_img, srcset_image, or raw img tag).
+    link_new_window: Boolean to open link in new window. Defaults to False.
+    link_text (Required): String for the call-to-action button text.
+    link_url (Required): String URL for the call-to-action button.
+#}
+{% macro m24_donate(
+  heading,
+  image,
+  link_text,
+  link_url,
+  link_new_window=False,
+  heading_level=2
+) -%}
+<div class="m24-c-donate">
+  <h{{ heading_level }} class="m24-c-donate-heading">{{ heading }}</h{{ heading_level }}>
+  <div class="m24-c-donate-body">
+    {{ caller() }}
+  </div>
+  <div class="m24-c-donate-media">
+    {{ image }}
+  </div>
+  <p class="m24-c-donate-cta">
+    <a href="{{ link_url }}" class="m24-c-cta" data-cta-text="{{ link_text|slugify }}"{% if link_new_window %} target="_blank" rel="external noopener"{% endif %}>{{ link_text }}</a>
+  </p>
 </div>
 {%- endmacro %}

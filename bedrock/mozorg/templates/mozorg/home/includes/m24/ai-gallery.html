@@ -1,0 +1,303 @@
+{#
+ This Source Code Form is subject to the terms of the Mozilla Public
+ License, v. 2.0. If a copy of the MPL was not distributed with this
+ file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#}
+
+{% from "macros-m24.html" import gallery_tile with context %}
+
+<section class="m24-section-ai m24-t-dark" id="gallery">
+  <div class="m24-c-content">
+    <header class="m24-c-intro">
+      <h2 class="m24-c-intro-title">{{ ftl('m24-home-join-the-movement') }}</h2>
+      <p>{{ ftl('m24-home-our-mission-is') }}</p>
+    </header>
+
+    <div class="m24-c-gallery-container">
+
+      {{ gallery_tile(
+        class='m24-l-grid-quarter',
+        image=picture(
+          url="img/home/2024/ai-gallery/collective-mobile-720.jpg",
+          sources=[
+            {
+              'media': '(max-width: 1311px)',
+              "srcset" : {
+                "img/home/2024/ai-gallery/collective-mobile-375.jpg": "375w",
+                "img/home/2024/ai-gallery/collective-mobile-720.jpg": "720w",
+                "img/home/2024/ai-gallery/collective-mobile-976.jpg": "976w",
+                "img/home/2024/ai-gallery/collective-mobile-1232.jpg": "1232w",
+                "img/home/2024/ai-gallery/collective-mobile-1450.jpg": "1450w",
+              },
+              'sizes': {
+                "(min-width: 768px)": "calc((100vw - 32px) / 2)",
+                "default": "calc(100vw - 32px)",
+              },
+              'width' : '1450',
+              'height' : '723'
+            },
+            {
+              'srcset': {
+                "img/home/2024/ai-gallery/collective-desktop-344.jpg": "344w",
+                "img/home/2024/ai-gallery/collective-desktop-664.jpg": "664w",
+              },
+              'sizes': {
+                "(min-width: 1440px)": "337px",
+                "default": "calc(25vw - 64px)",
+              },
+              'width' : '664',
+              'height' : '664'
+            },
+          ],
+          optional_attributes={
+            "loading": "lazy",
+            "alt": "",
+          }
+        ),
+        tag=ftl('m24-home-tag-product'),
+        heading=ftl('m24-home-mozilla-data-collective'),
+        body=ftl('m24-home-mozilla-data-collective-is'),
+        link_url='https://datacollective.mozillafoundation.org/' + utm_params,
+        cta_text=ftl('m24-home-join-today'),
+        link_attributes='rel="external" target="_blank" data-link-text="Join today"'
+      ) }}
+
+      {{ gallery_tile(
+        class='m24-l-grid-half',
+        image=picture(
+          url="img/home/2024/ai-gallery/lamp-mobile-720.jpg",
+          sources=[
+            {
+              'media': '(max-width: 1311px)',
+              "srcset" : {
+                "img/home/2024/ai-gallery/lamp-mobile-375.jpg": "375w",
+                "img/home/2024/ai-gallery/lamp-mobile-720.jpg": "720w",
+                "img/home/2024/ai-gallery/lamp-mobile-976.jpg": "976w",
+                "img/home/2024/ai-gallery/lamp-mobile-1232.jpg": "1232w",
+                "img/home/2024/ai-gallery/lamp-mobile-1450.jpg": "1450w",
+              },
+              'sizes': {
+                "(min-width: 768px)": "calc((100vw - 32px) / 2)",
+                "default": "calc(100vw - 32px)",
+              },
+              'width' : '1450',
+              'height' : '723'
+            },
+            {
+              'srcset': {
+                "img/home/2024/ai-gallery/lamp-desktop-688.jpg": "688w",
+                "img/home/2024/ai-gallery/lamp-desktop-1024.jpg": "1024w",
+                "img/home/2024/ai-gallery/lamp-desktop-1360.jpg": "1360w",
+              },
+              'sizes': {
+                "(min-width: 1440px)": "680px",
+                "default": "calc((100vw - 64px) / 2)",
+              },
+              'width' : '1360',
+              'height' : '1088'
+            },
+          ],
+          optional_attributes={
+            "loading": "lazy",
+            "alt": "",
+          }
+        ),
+        tag=ftl('m24-home-tag-event'),
+        heading=ftl('m24-home-own-what-you'),
+        body=ftl('m24-home-do-we-need-a'),
+        link_url='https://www.youtube.com/watch?v=obRiQme2b3M',
+        cta_text=ftl('m24-home-watch-now'),
+        link_attributes='rel="external" target="_blank" data-link-text="Watch now (Own What You Build)"'
+      ) }}
+
+      {{ gallery_tile(
+        class='m24-l-grid-quarter',
+        image=picture(
+          url="img/home/2024/ai-gallery/choice-first-mobile-720.jpg",
+          sources=[
+            {
+              'media': '(max-width: 1311px)',
+              "srcset": {
+                "img/home/2024/ai-gallery/choice-first-mobile-375.jpg": "375w",
+                "img/home/2024/ai-gallery/choice-first-mobile-720.jpg": "720w",
+                "img/home/2024/ai-gallery/choice-first-mobile-976.jpg": "976w",
+                "img/home/2024/ai-gallery/choice-first-mobile-1232.jpg": "1232w",
+                "img/home/2024/ai-gallery/choice-first-mobile-1450.jpg": "1450w",
+              },
+              'sizes': {
+                "(min-width: 768px)": "calc((100vw - 32px) / 2)",
+                "default": "calc(100vw - 32px)",
+              },
+              'width' : '1450',
+              'height' : '723'
+            },
+            {
+              'srcset': {
+                "img/home/2024/ai-gallery/choice-first-desktop-344.jpg": "344w",
+                "img/home/2024/ai-gallery/choice-first-desktop-664.jpg": "664w",
+              },
+              'sizes': {
+                "(min-width: 1440px)": "332px",
+                "default": "calc((100vw - 64px) / 4)",
+              },
+              'width' : '664',
+              'height' : '664'
+            },
+          ],
+          optional_attributes={
+            "loading": "lazy",
+            "alt": "",
+          }
+        ),
+        tag=ftl('m24-home-tag-project'),
+        heading=ftl('m24-home-choice-first-stack'),
+        body=ftl('m24-home-your-tools-your'),
+        link_url='https://www.mozilla.ai/open-tools/choice-first-stack' + utm_params,
+        cta_text=ftl('m24-home-get-started-now'),
+        link_attributes='rel="external" target="_blank" data-link-text="Get started Now (Choice First Stack)"'
+      ) }}
+
+      {{ gallery_tile(
+          class='m24-l-grid-half',
+          image=picture(
+            url="img/home/2024/ai-gallery/ventures-mobile-720.jpg",
+            sources=[
+              {
+                'media': '(max-width: 1311px)',
+                "srcset" : {
+                  "img/home/2024/ai-gallery/ventures-mobile-375.jpg": "375w",
+                  "img/home/2024/ai-gallery/ventures-mobile-720.jpg": "720w",
+                  "img/home/2024/ai-gallery/ventures-mobile-976.jpg": "976w",
+                  "img/home/2024/ai-gallery/ventures-mobile-1232.jpg": "1232w",
+                  "img/home/2024/ai-gallery/ventures-mobile-1450.jpg": "1450w",
+                },
+                'sizes': {
+                  "(min-width: 768px)": "calc((100vw - 32px) / 2)",
+                  "default": "calc(100vw - 32px)",
+                },
+                'width' : '1450',
+                'height' : '723'
+              },
+              {
+                'srcset': {
+                  "img/home/2024/ai-gallery/ventures-desktop-688.jpg": "688w",
+                  "img/home/2024/ai-gallery/ventures-desktop-1024.jpg": "1024w",
+                  "img/home/2024/ai-gallery/ventures-desktop-1360.jpg": "1360w",
+                },
+                'sizes': {
+                  "(min-width: 1440px)": "680px",
+                  "default": "calc((100vw - 64px) / 2)",
+                },
+                'width' : '1360',
+                'height' : '1088'
+              },
+            ],
+            optional_attributes={
+              "loading": "lazy",
+              "alt": ftl('m24-home-alt-ventures'),
+            }
+          ),
+          tag=ftl('m24-home-tag-program'),
+          heading=ftl('m24-home-mozilla-ventures'),
+          body=ftl('m24-home-got-an-earlystage'),
+          link_url='https://mozilla.vc/' + utm_params,
+          cta_text=ftl('m24-home-read-more'),
+          link_attributes='rel="external" target="_blank" data-link-text="Read more (Ventures)"'
+        ) }}
+
+      {{ gallery_tile(
+        class='m24-l-grid-quarter',
+        image=picture(
+          url="img/home/2024/ai-gallery/ecosystem-mobile-720.jpg",
+          sources=[
+            {
+              'media': '(max-width: 1311px)',
+              "srcset" : {
+                "img/home/2024/ai-gallery/ecosystem-mobile-375.jpg": "375w",
+                "img/home/2024/ai-gallery/ecosystem-mobile-720.jpg": "720w",
+                "img/home/2024/ai-gallery/ecosystem-mobile-976.jpg": "976w",
+                "img/home/2024/ai-gallery/ecosystem-mobile-1232.jpg": "1232w",
+                "img/home/2024/ai-gallery/ecosystem-mobile-1450.jpg": "1450w",
+              },
+              'sizes': {
+                "(min-width: 768px)": "calc((100vw - 32px) / 2)",
+                "default": "calc(100vw - 32px)",
+              },
+              'width' : '1450',
+              'height' : '723'
+            },
+            {
+              'srcset': {
+                "img/home/2024/ai-gallery/ecosystem-desktop-344.jpg": "344w",
+                "img/home/2024/ai-gallery/ecosystem-desktop-664.jpg": "664w",
+              },
+              'sizes': {
+                "(min-width: 1440px)": "680px",
+                "default": "calc((100vw - 64px) / 2)",
+              },
+              'width' : '1360',
+              'height' : '1088'
+            },
+          ],
+          optional_attributes={
+            "loading": "lazy",
+            "alt": "",
+          }
+        ),
+        tag=ftl('m24-home-tag-event'),
+        heading=ftl('m24-home-a-double-bottom'),
+        body=ftl('m24-home-mark-surman-discusses'),
+        link_url='https://www.youtube.com/watch?v=BoFUABRULxg',
+        cta_text=ftl('m24-home-watch-now'),
+        link_attributes='rel="external" target="_blank" data-link-text="Watch now (A Double Bottom Line for Tech )"'
+      ) }}
+
+      {{ gallery_tile(
+        class='m24-l-grid-quarter',
+        image=picture(
+          url="img/home/2024/ai-gallery/agent-platform-mobile-720.jpg",
+          sources=[
+            {
+              'media': '(max-width: 1311px)',
+              "srcset" : {
+                "img/home/2024/ai-gallery/agent-platform-mobile-375.jpg": "375w",
+                "img/home/2024/ai-gallery/agent-platform-mobile-720.jpg": "720w",
+                "img/home/2024/ai-gallery/agent-platform-mobile-976.jpg": "976w",
+                "img/home/2024/ai-gallery/agent-platform-mobile-1232.jpg": "1232w",
+                "img/home/2024/ai-gallery/agent-platform-mobile-1450.jpg": "1450w",
+              },
+              'sizes': {
+                "(min-width: 768px)": "calc((100vw - 32px) / 2)",
+                "default": "calc(100vw - 32px)",
+              },
+              'width' : '1450',
+              'height' : '723'
+            },
+            {
+              'srcset': {
+                "img/home/2024/ai-gallery/agent-platform-desktop-344.jpg": "344w",
+                "img/home/2024/ai-gallery/agent-platform-desktop-664.jpg": "664w",
+              },
+              'sizes': {
+                "(min-width: 1440px)": "332px",
+                "default": "calc((100vw - 64px) / 4)",
+              },
+              'width' : '664',
+              'height' : '664'
+            },
+          ],
+          optional_attributes={
+            "loading": "lazy",
+            "alt": "",
+          }
+        ),
+        tag=ftl('m24-home-tag-product'),
+        heading=ftl('m24-home-agent-platform', fallback='m24-home-any-agent'),
+        body=ftl('m24-home-stop-wiring-tools'),
+        link_url='https://www.mozilla.ai/product/agent-platform' + utm_params,
+        cta_text=ftl('m24-home-get-started'),
+        link_attributes='rel="external" target="_blank" data-link-text="Get started (Agent Platform)"'
+      ) }}
+    </div>
+  </div>
+</section>

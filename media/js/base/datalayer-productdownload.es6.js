@@ -6,7 +6,8 @@
 
 const TrackProductDownload = {};
 const prodURL = /^https:\/\/download.mozilla.org/;
-const stageURL = /^https:\/\/bouncer-bouncer.stage.mozaws.net/;
+const stageURL =
+    /^https:\/\/(bouncer-bouncer.stage.mozaws.net|stage.bouncer.nonprod.webservices.mozgcp.net)/;
 const devURL = /^https:\/\/dev.bouncer.nonprod.webservices.mozgcp.net/;
 const iTunesURL = /^https:\/\/itunes.apple.com/;
 const appStoreURL = /^https:\/\/apps.apple.com/;
@@ -14,6 +15,8 @@ const playStoreURL = /^https:\/\/play.google.com/;
 const marketURL = /^market:\/\/play.google.com/;
 const msStoreUrl = /^https:\/\/apps.microsoft.com/;
 const msStoreUrl2 = /^ms-windows-store:\/\/pdp\//;
+const vpnDesktopUrl =
+    /^.+\/vpn\/download\/(?<platform>mac|windows|linux)(?:\/[^]*)?\/?/;
 
 if (typeof window.dataLayer === 'undefined') {
     window.dataLayer = [];
@@ -35,7 +38,8 @@ TrackProductDownload.isValidDownloadURL = (downloadURL) => {
             playStoreURL.test(downloadURL) ||
             marketURL.test(downloadURL) ||
             msStoreUrl.test(downloadURL) ||
-            msStoreUrl2.test(downloadURL)
+            msStoreUrl2.test(downloadURL) ||
+            vpnDesktopUrl.test(downloadURL)
         ) {
             return true;
         } else {
@@ -99,28 +103,46 @@ TrackProductDownload.getEventFromUrl = (downloadURL) => {
             downloadURL.split('?')[1]
         );
     } else {
-        params = [];
+        params = {};
     }
 
     let eventObject = {};
-    if (
+
+    if (vpnDesktopUrl.test(downloadURL)) {
+        const platform = downloadURL.match(vpnDesktopUrl).groups.platform;
+        eventObject = TrackProductDownload.getEventObject(
+            'vpn',
+            platform,
+            'site',
+            'release'
+        );
+    } else if (
         prodURL.test(downloadURL) ||
         stageURL.test(downloadURL) ||
         devURL.test(downloadURL)
     ) {
+        // expect the link to have parameters like: ?product=firefox-beta-latest-ssl&os=osx&lang=en-US
         // extract the values we need from the parameters
         const productParam = params.product;
         const productSplit = productParam.split('-');
+
         // product is first word of product param
-        const product = productSplit[0];
+        let product = productSplit[0];
+        // (except partner builds are labelled as ?product=partner-firefox so class these as regular 'firefox' download events)
+        product = product === 'partner' ? 'firefox' : product;
+
+        // platform is `os` param
         let platform = params.os;
         // change platform to macos if it's osx
         platform = platform === 'osx' ? 'macos' : platform;
         // append 'msi' to platform if msi is in the product parameter
         platform =
             productParam.indexOf('msi') !== -1 ? platform + '-msi' : platform;
-        // release channel is second word of product param
+
+        // release channel uses second word of product param
         let release = productSplit[1];
+        // (except partner builds - where 'partner' is the first word)
+        release = productSplit[0] === 'partner' ? 'release' : release;
         // (except for latest, msi, or sub installer - we update those to say release)
         if (release === 'latest' || release === 'stub' || release === 'msi') {
             release = 'release';
@@ -157,9 +179,6 @@ TrackProductDownload.getEventFromUrl = (downloadURL) => {
             case 'org.mozilla.klar':
                 androidProduct = 'klar';
                 break;
-            case 'com.ideashower.readitlater.pro':
-                androidProduct = 'pocket';
-                break;
             case 'org.mozilla.firefox.vpn':
                 androidProduct = 'vpn';
                 break;
@@ -172,20 +191,7 @@ TrackProductDownload.getEventFromUrl = (downloadURL) => {
             androidRelease
         );
     } else if (appStoreURL.test(downloadURL) || iTunesURL.test(downloadURL)) {
-        let iosProduct = 'unrecognized';
-        if (downloadURL.indexOf('/id989804926') !== -1) {
-            iosProduct = 'firefox_mobile';
-        } else if (downloadURL.indexOf('/id1055677337') !== -1) {
-            iosProduct = 'focus';
-        } else if (downloadURL.indexOf('/id1073435754') !== -1) {
-            iosProduct = 'klar';
-        } else if (downloadURL.indexOf('/id309601447') !== -1) {
-            iosProduct = 'pocket';
-        } else if (downloadURL.indexOf('/id1489407738') !== -1) {
-            iosProduct = 'vpn';
-        }
-
-        // Apple App Store
+        const iosProduct = params.mz_pr ? params.mz_pr : 'unrecognized';
         eventObject = TrackProductDownload.getEventObject(
             iosProduct,
             'ios',
@@ -193,14 +199,10 @@ TrackProductDownload.getEventFromUrl = (downloadURL) => {
             'release'
         );
     } else if (msStoreUrl.test(downloadURL) || msStoreUrl2.test(downloadURL)) {
-        let channel = 'unrecognized';
-        if (downloadURL.indexOf('9nzvdkpmr9rd') !== -1) {
-            channel = 'release';
-        } else if (downloadURL.indexOf('9nzw26frndln') !== -1) {
-            channel = 'beta';
-        }
-
-        // MS Store
+        const channel =
+            params.mz_cn === 'release' || params.mz_cn === 'beta'
+                ? params.mz_cn
+                : 'unrecognized';
         eventObject = TrackProductDownload.getEventObject(
             'firefox',
             'win',

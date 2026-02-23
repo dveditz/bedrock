@@ -8,7 +8,7 @@
 
 const { test, expect } = require('@playwright/test');
 const openPage = require('../scripts/open-page');
-const url = '/de/';
+const url = '/en-US/';
 
 test.describe(
     `${url} navigation (desktop)`,
@@ -21,58 +21,52 @@ test.describe(
         });
 
         test('Navigation menu hover', async ({ page }) => {
-            const firefoxLink = page.getByTestId('navigation-link-firefox');
-            const firefoxMenu = page.getByTestId('navigation-menu-firefox');
-            const productsLink = page.getByTestId('navigation-link-products');
-            const productsMenu = page.getByTestId('navigation-menu-products');
-            const whoWeAreLink = page.getByTestId('navigation-link-who-we-are');
-            const whoWeAreMenu = page.getByTestId('navigation-menu-who-we-are');
-            const innovationLink = page.getByTestId(
-                'navigation-link-innovation'
+            const productsLink = page.getByTestId(
+                'm24-navigation-link-products'
             );
-            const innovationMenu = page.getByTestId(
-                'navigation-menu-innovation'
+            const productsMenu = page.getByTestId(
+                'm24-navigation-menu-products'
             );
-
-            // Hover over Firefox link
-            await firefoxLink.hover();
-            await expect(firefoxMenu).toBeVisible();
+            const aboutUsLink = page.getByTestId(
+                'm24-navigation-link-about-us'
+            );
+            const aboutUsMenu = page.getByTestId(
+                'm24-navigation-menu-about-us'
+            );
 
             // Hover over products link
             await productsLink.hover();
             await expect(productsMenu).toBeVisible();
-            await expect(firefoxMenu).not.toBeVisible();
 
-            // Hover over who we are link
-            await whoWeAreLink.hover();
-            await expect(whoWeAreMenu).toBeVisible();
+            // Hover over about us link
+            await aboutUsLink.hover();
+            await expect(aboutUsMenu).toBeVisible();
             await expect(productsMenu).not.toBeVisible();
-
-            // Hover over innovation link
-            await innovationLink.hover();
-            await expect(innovationMenu).toBeVisible();
-            await expect(whoWeAreMenu).not.toBeVisible();
         });
 
         test('Navigation link click', async ({ page }) => {
-            const firefoxLink = page.getByTestId('navigation-link-firefox');
-            const firefoxMenu = page.getByTestId('navigation-menu-firefox');
-            const firefoxMenuLink = page.getByTestId(
-                'navigation-menu-link-firefox-desktop'
+            const productsLink = page.getByTestId(
+                'm24-navigation-link-products'
+            );
+            const productsMenu = page.getByTestId(
+                'm24-navigation-menu-products'
+            );
+            const productsMenuLink = page.getByTestId(
+                'm24-navigation-menu-link-products-vpn'
             );
 
-            // Hover over Firefox link
-            await firefoxLink.hover();
-            await expect(firefoxMenu).toBeVisible();
+            // Hover over Products VPN link
+            await productsLink.hover();
+            await expect(productsMenu).toBeVisible();
 
-            // Click Firefox desktop link
-            await firefoxMenuLink.click();
-            await page.waitForURL('**/firefox/new/', {
+            // Click Products VPN link
+            await productsMenuLink.click();
+            await page.waitForURL('**/products/vpn/', {
                 waitUntil: 'commit'
             });
 
-            // Assert Firefox menu is closed after navigation
-            await expect(firefoxMenu).not.toBeVisible();
+            // Assert Products menu is closed after navigation
+            await expect(productsMenu).not.toBeVisible();
         });
     }
 );
@@ -91,33 +85,27 @@ test.describe(
 
         test('Navigation open / close click', async ({ page }) => {
             const navigationMenuButton = page.getByTestId(
-                'navigation-menu-button'
+                'm24-navigation-menu-button'
             );
             const navigationMenuItems = page.getByTestId(
-                'navigation-menu-items'
+                'm24-navigation-menu-items'
             );
-            const firefoxLink = page.getByTestId('navigation-link-firefox');
-            const firefoxMenu = page.getByTestId('navigation-menu-firefox');
-            const productsLink = page.getByTestId('navigation-link-products');
-            const productsMenu = page.getByTestId('navigation-menu-products');
-            const whoWeAreLink = page.getByTestId('navigation-link-who-we-are');
-            const whoWeAreMenu = page.getByTestId('navigation-menu-who-we-are');
-            const innovationLink = page.getByTestId(
-                'navigation-link-innovation'
+            const productsLink = page.getByTestId(
+                'm24-navigation-link-products'
             );
-            const innovationMenu = page.getByTestId(
-                'navigation-menu-innovation'
+            const productsMenu = page.getByTestId(
+                'm24-navigation-menu-products'
+            );
+            const aboutUsLink = page.getByTestId(
+                'm24-navigation-link-about-us'
+            );
+            const aboutUsMenu = page.getByTestId(
+                'm24-navigation-menu-about-us'
             );
 
             // Open navigation menu
             await navigationMenuButton.click();
             await expect(navigationMenuItems).toBeVisible();
-
-            // Open and close Firefox menu
-            await firefoxLink.click();
-            await expect(firefoxMenu).toBeVisible();
-            await firefoxLink.click();
-            await expect(firefoxMenu).not.toBeVisible();
 
             // Open and close products menu
             await productsLink.click();
@@ -125,17 +113,11 @@ test.describe(
             await productsLink.click();
             await expect(productsMenu).not.toBeVisible();
 
-            // Open and close who we are menu
-            await whoWeAreLink.click();
-            await expect(whoWeAreMenu).toBeVisible();
-            await whoWeAreLink.click();
-            await expect(whoWeAreMenu).not.toBeVisible();
-
-            // Open and close innovation menu
-            await innovationLink.click();
-            await expect(innovationMenu).toBeVisible();
-            await innovationLink.click();
-            await expect(innovationMenu).not.toBeVisible();
+            // Open and close about us menu
+            await aboutUsLink.click();
+            await expect(aboutUsMenu).toBeVisible();
+            await aboutUsLink.click();
+            await expect(aboutUsMenu).not.toBeVisible();
 
             // Close navigation menu
             await navigationMenuButton.click();
@@ -144,28 +126,32 @@ test.describe(
 
         test('Navigation link click', async ({ page }) => {
             const navigationMenuButton = page.getByTestId(
-                'navigation-menu-button'
+                'm24-navigation-menu-button'
             );
             const navigationMenuItems = page.getByTestId(
-                'navigation-menu-items'
+                'm24-navigation-menu-items'
             );
-            const firefoxLink = page.getByTestId('navigation-link-firefox');
-            const firefoxMenu = page.getByTestId('navigation-menu-firefox');
-            const firefoxMenuLink = page.getByTestId(
-                'navigation-menu-link-firefox-desktop'
+            const productsLink = page.getByTestId(
+                'm24-navigation-link-products'
+            );
+            const productsMenu = page.getByTestId(
+                'm24-navigation-menu-products'
+            );
+            const productsMenuLink = page.getByTestId(
+                'm24-navigation-menu-link-products-vpn'
             );
 
             // Open navigation menu
             await navigationMenuButton.click();
             await expect(navigationMenuItems).toBeVisible();
 
-            // Open and Firefox menu
-            await firefoxLink.click();
-            await expect(firefoxMenu).toBeVisible();
+            // Open Products menu
+            await productsLink.click();
+            await expect(productsMenu).toBeVisible();
 
-            // Click Firefox desktop link
-            await firefoxMenuLink.click();
-            await page.waitForURL('**/firefox/new/', {
+            // Click products vpn link
+            await productsMenuLink.click();
+            await page.waitForURL('**/products/vpn/', {
                 waitUntil: 'commit'
             });
 

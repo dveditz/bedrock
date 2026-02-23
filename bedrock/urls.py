@@ -19,6 +19,7 @@ from bedrock.base.i18n import bedrock_i18n_patterns
 # The default django 404 and 500 handler doesn't run the ContextProcessors,
 # which breaks the base template page. So we replace them with views that do!
 handler500 = "bedrock.base.views.server_error_view"
+handler410 = "bedrock.base.views.page_gone_view"
 handler404 = "bedrock.base.views.page_not_found_view"
 locale404 = "lib.l10n_utils.locale_selection"
 
@@ -56,6 +57,7 @@ if settings.DEV:
 if settings.DEBUG:
     urlpatterns += bedrock_i18n_patterns(
         path("404/", import_string(handler404)),
+        path("410/", import_string(handler410)),
         path("500/", import_string(handler500)),
     )
     urlpatterns += (path("csrf_403/", base_views.csrf_failure, {}),)
@@ -66,13 +68,18 @@ if settings.WAGTAIL_ENABLE_ADMIN:
     # that bedrock doesn't try to prepend a locale onto requests for the path
     urlpatterns += (
         path("oidc/", include("mozilla_django_oidc.urls")),
+        path("cms-admin/translations/", include("wagtail_localize_dashboard.urls")),  # Must come before wagtailadmin_urls
+        path("intentional-blanks/", include("wagtail_localize_intentional_blanks.urls")),
         path("cms-admin/", include(wagtailadmin_urls)),
         path("django-admin/", admin.site.urls),  # needed to show django-rq UI
         path("django-rq/", include("django_rq.urls")),  # task queue management
         path("_internal_draft_preview/", include(wagtaildraftsharing_urls)),  # ONLY available in CMS mode
     )
 
-if settings.DEFAULT_FILE_STORAGE == "django.core.files.storage.FileSystemStorage":
+if settings.ENABLE_DJANGO_SILK:
+    urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
+
+if settings.STORAGES["default"]["BACKEND"] == "django.core.files.storage.FileSystemStorage":
     # Serve media files from Django itself - production won't use this
     from django.urls import re_path
     from django.views.static import serve

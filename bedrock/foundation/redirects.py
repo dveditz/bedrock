@@ -5,17 +5,18 @@
 from bedrock.redirects.util import redirect
 
 redirectpatterns = (
-    redirect(r"^foundation/?$", "https://foundation.mozilla.org/"),
-    redirect(r"^foundation/about/?$", "https://foundation.mozilla.org/about/"),
-    redirect(r"^foundation/documents/?$", "https://foundation.mozilla.org/about/public-records/"),
-    redirect(r"^foundation/issues/?$", "https://foundation.mozilla.org/initiatives/"),
-    redirect(r"^foundation/leadership-network/?$", "https://foundation.mozilla.org/"),
-    redirect(r"^foundation/advocacy/?$", "https://foundation.mozilla.org/"),
+    redirect(r"^foundation/?$", "https://www.mozillafoundation.org/"),
+    redirect(r"^foundation/about/?$", "https://www.mozillafoundation.org/about/"),
+    redirect(r"^foundation/documents/?$", "https://www.mozillafoundation.org/about/public-records/"),
+    redirect(r"^foundation/issues/?$", "https://www.mozillafoundation.org/initiatives/"),
+    redirect(r"^foundation/leadership-network/?$", "https://www.mozillafoundation.org/"),
+    redirect(r"^foundation/advocacy/?$", "https://www.mozillafoundation.org/"),
     redirect(r"^foundation/trademarks/?$", "/foundation/trademarks/policy/"),
     redirect(r"^foundation/trademarks/faq/?$", "/foundation/trademarks/policy/"),
     redirect(r"^foundation/documents/domain-name-license\.pdf$", "/foundation/trademarks/policy/"),
     redirect(r"^foundation/trademarks/poweredby/faq/?$", "/foundation/trademarks/policy/"),
     redirect(r"^foundation/trademarks/l10n-website-policy/?$", "/foundation/trademarks/policy/"),
     # Issue 9727
-    redirect(r"^foundation/annualreport(/2022)?/?$", "https://stateof.mozilla.org/", name="foundation.annualreport", locale_prefix=False),
+    redirect(r"^foundation/annualreport/2022/?$", "https://stateof.mozilla.org/"),
+    redirect(r"^foundation/annualreport/?$", "/foundation/annualreport/2024/", name="foundation.annualreport"),
 )

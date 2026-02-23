@@ -4,19 +4,19 @@
 
 @use 'sass:math';
 
-@import '~@mozilla-protocol/core/protocol/css/includes/lib';
-@import '~@mozilla-protocol/core/protocol/css/includes/mixins/details';
+@use '~@mozilla-protocol/core/protocol/css/includes/lib' as *;
+@use '~@mozilla-protocol/core/protocol/css/includes/mixins/details';
 
 // * -------------------------------------------------------------------------- */
 // Index
 
-dt {
+main dt {
     @include text-title-xs;
     font-weight: bold;
     margin-top: $spacing-sm;
 }
 
-dd {
+main dd {
     padding: $spacing-sm;
 }
 
@@ -96,12 +96,12 @@ dd {
     margin: 0 auto $layout-lg;
 }
 
-h2 {
+main h2 {
     @include text-title-md;
     margin-top: $spacing-2xl;
 }
 
-h3 {
+main h3 {
     @include text-title-sm;
     margin-top: $spacing-2xl;
 }
@@ -131,4 +131,46 @@ h3 {
 
 .c-collapsible-section .is-closed[aria-hidden='true'] {
     display: none;
+}
+
+// * -------------------------------------------------------------------------- */
+// Custom 2024 page
+$mzp-v-spacing: var(--v-grid-md);
+
+.c-2024-back-link {
+    display: flex;
+    gap: $spacing-xs;
+    margin-bottom: $spacing-xl;
+
+    @media #{$mq-md} {
+        margin-bottom: $spacing-2xl;
+    }
+
+    img {
+        padding: $spacing-xs;
+        box-sizing: border-box;
+    }
+}
+
+.c-2024-reports {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+    margin-top: $spacing-2xl;
+
+    a {
+        width: 100%;
+    }
+
+    @media #{$mq-md} {
+        flex-flow: row wrap;
+
+        > * {
+            flex-shrink: 0;
+        }
+
+        a {
+            width: auto;
+        }
+    }
 }

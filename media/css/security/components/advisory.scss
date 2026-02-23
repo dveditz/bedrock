@@ -2,10 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-$font-path: '/media/protocol/fonts';
-$image-path: '/media/protocol/img';
-
-@import '~@mozilla-protocol/core/protocol/css/includes/lib';
+@use '~@mozilla-protocol/core/protocol/css/includes/lib' as *;
 
 .advisory {
     .summary {
@@ -41,7 +38,7 @@ $image-path: '/media/protocol/img';
     }
 
     .cve {
-        margin-bottom: $layout-md;
+        margin-top: $layout-md;
 
         h5 {
             @include font-size(16px);

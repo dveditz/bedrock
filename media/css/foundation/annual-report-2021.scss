@@ -4,11 +4,8 @@
 
 @use 'sass:color';
 
-$font-path: '/media/protocol/fonts';
-$image-path: '/media/protocol/img';
-
-@import '~@mozilla-protocol/core/protocol/css/includes/lib';
-@import '~@mozilla-protocol/core/protocol/css/components/modal';
+@use '~@mozilla-protocol/core/protocol/css/includes/lib' as * with ($font-path: '/media/protocol/fonts', $image-path: '/media/protocol/img');
+@use '~@mozilla-protocol/core/protocol/css/components/modal';
 
 // * -------------------------------------------------------------------------- */
 // Typography
@@ -174,15 +171,15 @@ main {
     a:link,
     a:visited {
         color: $color-black;
+    }
 
-        &:hover,
-        &:focus,
-        &:active {
-            color: $link-color-hover;
+    a:hover,
+    a:focus,
+    a:active {
+        color: $link-color-hover;
 
-            @supports (--css: variables) {
-                color: var(--link-color-hover);
-            }
+        @supports (--css: variables) {
+            color: var(--link-color-hover);
         }
     }
 
@@ -202,10 +199,6 @@ main {
 .mzp-c-modal-close {
     background: $color-green-40;
     border-radius: 100%;
-
-    button {
-        cursor: pointer;
-    }
 
     .mzp-c-modal-button-close {
         background-image: url('/media/protocol/img/icons/close.svg');

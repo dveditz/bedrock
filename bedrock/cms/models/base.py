@@ -10,6 +10,7 @@ from django.views.decorators.cache import never_cache
 from wagtail.models import Page as WagtailBasePage
 from wagtail_localize.fields import SynchronizedField
 
+from bedrock.cms.utils import get_locales_for_cms_page
 from lib import l10n_utils
 
 
@@ -32,6 +33,10 @@ class AbstractBedrockCMSPage(WagtailBasePage):
         2) Apply `never_cache` headers to the `wagtail.Page` class's
         `serve_password_required_response` method, via the @method_decorator above
     """
+
+    # Fluent (.ftl) files for localization. Override in subclasses to specify
+    # page-specific FTL files. If None, only FLUENT_DEFAULT_FILES will be used.
+    ftl_files = None
 
     # Make the `slug` field 'synchronised', so it automatically gets copied over to
     # every localized variant of the page and shouldn't get sent for translation.
@@ -57,14 +62,8 @@ class AbstractBedrockCMSPage(WagtailBasePage):
         # Quick annotation to help us track the origin of the page
         request.is_cms_page = True
 
-        # Patch in a list of CMS-available locales for pages that are translations, not just aliases
-        request._locales_available_via_cms = [self.locale.language_code]
-        try:
-            _actual_translations = self.get_translations().exclude(id__in=[x.id for x in self.aliases.all()])
-            request._locales_available_via_cms += [x.locale.language_code for x in _actual_translations]
-        except ValueError:
-            # when there's no draft and no potential for aliases, etc, the above lookup will fail
-            pass
+        # Patch in a list of available locales for pages that are translations, not just aliases
+        request._locales_available_via_cms = get_locales_for_cms_page(self)
         return request
 
     def _render_with_fluent_string_support(self, request, *args, **kwargs):
@@ -72,9 +71,8 @@ class AbstractBedrockCMSPage(WagtailBasePage):
         # can swap that for our Fluent-compatible rendering method
         template = self.get_template(request, *args, **kwargs)
         context = self.get_context(request, *args, **kwargs)
-        # We shouldn't need to spec any special ftl_files param for render()
-        # here because the global spec is in settings.FLUENT_DEFAULT_FILES
-        return l10n_utils.render(request, template, context)
+        # Pass page-specific ftl_files if defined, otherwise only FLUENT_DEFAULT_FILES will be used
+        return l10n_utils.render(request, template, context, ftl_files=self.ftl_files)
 
     def serve(self, request, *args, **kwargs):
         # Need to replicate behaviour in https://github.com/wagtail/wagtail/blob/stable/5.2.x/wagtail/models/__init__.py#L1928

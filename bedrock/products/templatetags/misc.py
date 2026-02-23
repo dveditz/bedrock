@@ -35,28 +35,17 @@ def _format_currency(price, currency, currency_locale):
 
 
 def _vpn_get_ga_data(selected_plan):
-    id = selected_plan.get("id")
     analytics = selected_plan.get("analytics")
 
     ga_data = (
-        "{"
-        "'id' : '%s',"
-        "'brand' : '%s',"
-        "'plan' : '%s',"
-        "'period' : '%s',"
-        "'price' : '%s',"
-        "'discount' : '%s',"
-        "'currency' : '%s'"
-        "}"
-        % (
-            id,
-            analytics.get("brand"),
-            analytics.get("plan"),
-            analytics.get("period"),
-            analytics.get("price"),
-            analytics.get("discount"),
-            analytics.get("currency"),
-        )
+        f"{{"
+        f"'brand' : '{analytics.get('brand')}',"
+        f"'plan' : '{analytics.get('plan')}',"
+        f"'period' : '{analytics.get('period')}',"
+        f"'price' : '{analytics.get('price')}',"
+        f"'discount' : '{analytics.get('discount')}',"
+        f"'currency' : '{analytics.get('currency')}'"
+        f"}}"
     )
 
     return ga_data
@@ -72,6 +61,15 @@ def _vpn_get_available_plans(country_code, lang):
     country_plans = settings.VPN_VARIABLE_PRICING.get(country_code, settings.VPN_VARIABLE_PRICING["US"])
 
     return country_plans.get(lang, country_plans.get("default"))
+
+
+def _vpn_get_mobile_plans(country_code):
+    """
+    Get mobile only subscription plans using country_code.
+    Defaults to "US" if no matching country code is found.
+    """
+
+    return settings.VPN_MOBILE_SUB_PRICING.get(country_code, settings.VPN_MOBILE_SUB_PRICING["US"])
 
 
 def _vpn_product_link(product_url, entrypoint, link_text, class_name=None, optional_parameters=None, optional_attributes=None):
@@ -98,7 +96,7 @@ def _vpn_product_link(product_url, entrypoint, link_text, class_name=None, optio
     if class_name:
         css_class += f" {class_name}"
 
-    markup = f'<a href="{href}" data-action="{settings.FXA_ENDPOINT}" class="{css_class}" {attrs}>' f"{link_text}" f"</a>"
+    markup = f'<a href="{href}" data-action="{settings.FXA_ENDPOINT}" class="{css_class}" {attrs}>{link_text}</a>'
 
     return Markup(markup)
 
@@ -144,11 +142,20 @@ def vpn_subscribe_link(
     """
 
     product_id = settings.VPN_PRODUCT_ID
+
     available_plans = _vpn_get_available_plans(country_code, lang)
     selected_plan = available_plans.get(plan, VPN_12_MONTH_PLAN)
-    plan_id = selected_plan.get("id")
 
-    product_url = f"{settings.VPN_SUBSCRIPTION_URL}subscriptions/products/{product_id}?plan={plan_id}"
+    product_id = settings.VPN_PRODUCT_ID_NEXT
+    plan_slug = "yearly" if plan == VPN_12_MONTH_PLAN else "monthly"
+
+    # For testing/QA we support a test 'daily' API endpoint on the staging API only
+    # We only want to override the monthly VPN option when in QA mode; annual remains unchanged
+    # https://mozilla-hub.atlassian.net/browse/VPN-6985
+    if plan_slug == "monthly" and settings.VPN_SUBSCRIPTION_USE_DAILY_MODE__QA_ONLY:
+        plan_slug = "daily"
+
+    product_url = f"{settings.VPN_SUBSCRIPTION_URL_NEXT}{product_id}/{plan_slug}/landing/"
 
     if "analytics" in selected_plan:
         if class_name is None:
@@ -196,6 +203,37 @@ def vpn_monthly_price(ctx, plan=VPN_12_MONTH_PLAN, country_code=None, lang=None)
 
 @library.global_function
 @jinja2.pass_context
+def vpn_mobile_monthly_price(ctx, plan=VPN_12_MONTH_PLAN, country_code=None, lang=None):
+    """
+    Render a localized string displaying VPN monthly plan price for a mobile subscription.
+    This is used for countries where a VPN subscription can only be purchased through the
+    Google Play Store or the Apple App Store, and uses a different pricing plan matrix to
+    countries that purchase through FxA / sub-plat.
+
+    Examples
+    ========
+
+    In Template
+    -----------
+
+        {{ vpn_mobile_monthly_price(country_code=country_code, lang=LANG) }}
+    """
+
+    available_plans = _vpn_get_mobile_plans(country_code)
+    selected_plan = available_plans.get(plan, VPN_12_MONTH_PLAN)
+    price = selected_plan.get("price")
+    currency = selected_plan.get("currency")
+    currency_locale = lang.replace("-", "_")
+    amount = _format_currency(price, currency, currency_locale)
+    price = ftl("vpn-shared-pricing-monthly", amount=amount, ftl_files=FTL_FILES)
+
+    markup = f'<span class="vpn-monthly-price-display">{price}</span>'
+
+    return Markup(markup)
+
+
+@library.global_function
+@jinja2.pass_context
 def vpn_total_price(ctx, country_code=None, lang=None):
     """
     Render a localized string displaying VPN total plan price.
@@ -220,6 +258,37 @@ def vpn_total_price(ctx, country_code=None, lang=None):
         price = ftl("vpn-shared-pricing-total-plus-tax", fallback="vpn-shared-pricing-total", amount=amount, ftl_files=FTL_FILES)
     else:
         price = ftl("vpn-shared-pricing-total", amount=amount, ftl_files=FTL_FILES)
+
+    markup = price
+
+    return Markup(markup)
+
+
+@library.global_function
+@jinja2.pass_context
+def vpn_mobile_total_price(ctx, country_code=None, lang=None):
+    """
+    Render a localized string displaying VPN total plan price for a mobile subscription.
+    This is used for countries where a VPN subscription can only be purchased through the
+    Google Play Store or the Apple App Store, and uses a different pricing plan matrix to
+    countries that purchase through FxA / sub-plat.
+
+    Examples
+    ========
+
+    In Template
+    -----------
+
+        {{ vpn_mobile_total_price(country_code=country_code, lang=LANG) }}
+    """
+
+    available_plans = _vpn_get_mobile_plans(country_code)
+    selected_plan = available_plans.get(VPN_12_MONTH_PLAN)
+    price = selected_plan.get("total")
+    currency = selected_plan.get("currency")
+    currency_locale = lang.replace("-", "_")
+    amount = _format_currency(price, currency, currency_locale)
+    price = ftl("vpn-shared-pricing-total", amount=amount, ftl_files=FTL_FILES)
 
     markup = price
 
@@ -259,6 +328,7 @@ def vpn_product_referral_link(
     link_to_pricing_page=False,
     page_anchor="",
     link_text=None,
+    is_cta_button_styled=True,
     class_name=None,
     optional_attributes=None,
     optional_parameters=None,
@@ -276,7 +346,7 @@ def vpn_product_referral_link(
     """
 
     href = reverse("products.vpn.pricing") if link_to_pricing_page else reverse("products.vpn.landing")
-    css_class = "mzp-c-button js-fxa-product-referral-link"
+    css_class = "mzp-c-button js-fxa-product-referral-link" if is_cta_button_styled else "js-fxa-product-referral-link"
     attrs = f'data-referral-id="{referral_id}" '
 
     if optional_attributes:

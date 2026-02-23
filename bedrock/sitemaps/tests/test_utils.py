@@ -7,63 +7,15 @@ from unittest.mock import patch
 import pytest
 from wagtail.models import Locale, Page, PageViewRestriction, Site
 
+from bedrock.anonym.models import AnonymNewsItemPage, AnonymNewsPage
 from bedrock.cms.tests.factories import LocaleFactory, SimpleRichTextPageFactory, StructuralPageFactory
-from bedrock.contentful.constants import (
-    CONTENT_CLASSIFICATION_VPN,
-    CONTENT_TYPE_PAGE_RESOURCE_CENTER,
-)
-from bedrock.contentful.models import ContentfulEntry
 from bedrock.sitemaps.utils import (
-    _get_vrc_urls,
-    get_contentful_urls,
+    _path_for_cms_url,
     get_wagtail_urls,
     update_sitemaps,
 )
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def dummy_vrc_pages():
-    # No content, just the bare data we need
-    for idx in range(5):
-        ContentfulEntry.objects.create(
-            contentful_id=f"DUMMY-{idx}",
-            slug=f"test-slug-{idx}",
-            # TODO: support different locales
-            locale="en-US",
-            localisation_complete=True,
-            content_type=CONTENT_TYPE_PAGE_RESOURCE_CENTER,
-            classification=CONTENT_CLASSIFICATION_VPN,
-            data={},
-            data_hash="dummy",
-        )
-
-
-def test__get_vrc_urls(dummy_vrc_pages):
-    # TODO: support different locales
-    output = _get_vrc_urls()
-    assert output == {
-        "/products/vpn/resource-center/test-slug-0/": ["en-US"],
-        "/products/vpn/resource-center/test-slug-1/": ["en-US"],
-        "/products/vpn/resource-center/test-slug-2/": ["en-US"],
-        "/products/vpn/resource-center/test-slug-3/": ["en-US"],
-        "/products/vpn/resource-center/test-slug-4/": ["en-US"],
-    }
-
-
-def test__get_vrc_urls__no_content():
-    output = _get_vrc_urls()
-    assert output == {}
-
-
-@patch("bedrock.sitemaps.utils._get_vrc_urls")
-def test_get_contentful_urls(mock__get_vrc_urls):
-    mock__get_vrc_urls.return_value = {"vrc-urls": "dummy-here"}
-
-    output = get_contentful_urls()
-    assert output == {"vrc-urls": "dummy-here"}
-    mock__get_vrc_urls.assert_called_once_with()
 
 
 @pytest.fixture
@@ -206,35 +158,132 @@ def test_get_wagtail_urls(dummy_wagtail_pages):
     }
 
 
+def test_get_wagtail_urls__exclude_from_sitemap(dummy_wagtail_pages):
+    """Test that pages with exclude_from_sitemap=True are excluded from sitemap."""
+    site = Site.objects.get(is_default_site=True)
+    en_us_root_page = site.root_page
+
+    # Create an AnonymNewsPage
+    news_page = AnonymNewsPage(
+        title="News",
+        slug="news",
+        live=True,
+    )
+    en_us_root_page.add_child(instance=news_page)
+    news_page.save_revision().publish()
+
+    # Create a news item without external link (should be included)
+    news_item_without_link = AnonymNewsItemPage(
+        title="Internal News Item",
+        slug="internal-news",
+        live=True,
+        link="",  # No external link
+    )
+    news_page.add_child(instance=news_item_without_link)
+    news_item_without_link.save_revision().publish()
+
+    # Create a news item with external link (should be excluded)
+    news_item_with_link = AnonymNewsItemPage(
+        title="External News Item",
+        slug="external-news",
+        live=True,
+        link="https://example.com/article",  # Has external link
+    )
+    news_page.add_child(instance=news_item_with_link)
+    news_item_with_link.save_revision().publish()
+
+    urls = get_wagtail_urls()
+
+    # The news page and news item without link should be included
+    assert "/news/" in urls
+    assert "/news/internal-news/" in urls
+
+    # The news item with external link should be excluded
+    assert "/news/external-news/" not in urls
+
+
+@pytest.mark.parametrize(
+    "page_url, lang_code, expected",
+    (
+        (
+            # expected behaviour: strip the locale and leading slash
+            "/fr/some/path/here/fr/",
+            "fr",
+            "/some/path/here/fr/",
+        ),
+        (
+            # only strip the locale and leading slash if it's for the given lang code
+            "/some/path/here/fr/",
+            "fr",
+            "/some/path/here/fr/",
+        ),
+        (
+            # confirm region-based locales also work
+            "/en-US/some/path/here/en-US/",
+            "en-US",
+            "/some/path/here/en-US/",
+        ),
+        (
+            # show we definitely only replace one, the first
+            # 6 in input; 5 output
+            "/de/de/de/de/de/de/",
+            "de",
+            "/de/de/de/de/de/",
+        ),
+        (
+            # root path for a locale
+            "/it/",
+            "it",
+            "/",
+        ),
+        (
+            # unrealistic, but proves the point that we only replace the locale code if the given lang code matches
+            "/fr/some/path/here/fr/",
+            "de",
+            "/fr/some/path/here/fr/",
+        ),
+    ),
+)
+def test_path_for_cms_url(page_url, lang_code, expected):
+    # General test for Issue #15805
+    assert _path_for_cms_url(page_url, lang_code) == expected
+
+
+def test_get_wagtail_urls__ensure_locale_codes_not_stripped(dummy_wagtail_pages):
+    # Focused test for Issue #15805
+    fr_test_child_page = Page.objects.get(slug="child-page", locale__language_code="fr")
+    fr_test_child_page.slug = f"fr-{fr_test_child_page.slug}fr"
+    fr_test_child_page.save()
+
+    fr_test_child_page.refresh_from_db()
+    assert fr_test_child_page.slug == "fr-child-pagefr"
+    assert fr_test_child_page.url == "/fr/test-page/fr-child-pagefr/"
+
+    urls = get_wagtail_urls()
+    assert urls["/test-page/fr-child-pagefr/"] == ["fr"]
+
+
 @patch("bedrock.sitemaps.utils.get_static_urls")
-@patch("bedrock.sitemaps.utils.get_release_notes_urls")
 @patch("bedrock.sitemaps.utils.get_security_urls")
-@patch("bedrock.sitemaps.utils.get_contentful_urls")
 @patch("bedrock.sitemaps.utils.get_wagtail_urls")
 @patch("bedrock.sitemaps.utils.output_json")
 def test_update_sitemaps(
     mock_output_json,
     mock_get_wagtail_urls,
-    mock_get_contentful_urls,
     mock_get_security_urls,
-    mock_get_release_notes_urls,
     mock_get_static_urls,
 ):
     "Light check to ensure we've not added _new_ things we haven't added tests for"
 
-    mock_get_wagtail_urls.return_value = {"wagtail": "dummy1"}
-    mock_get_contentful_urls.return_value = {"contentful": "dummy2"}
-    mock_get_security_urls.return_value = {"security": "dummy3"}
-    mock_get_release_notes_urls.return_value = {"release_notes": "dummy4"}
-    mock_get_static_urls.return_value = {"static_urls": "dummy5"}
+    mock_get_wagtail_urls.return_value = {"wagtail": "walterite"}
+    mock_get_security_urls.return_value = {"security": "grainwave"}
+    mock_get_static_urls.return_value = {"static_urls": "rubberduck"}
 
     update_sitemaps()
     expected = {
-        "wagtail": "dummy1",
-        "contentful": "dummy2",
-        "security": "dummy3",
-        "release_notes": "dummy4",
-        "static_urls": "dummy5",
+        "wagtail": "walterite",
+        "security": "grainwave",
+        "static_urls": "rubberduck",
     }
 
     mock_output_json.assert_called_once_with(expected)

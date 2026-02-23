@@ -4,7 +4,6 @@
 
 ### URL: https://www-dev.allizom.org/firefox/features/adblocker/
 
-features-adblocker-how-to-block-annoying = How to block annoying ads using an ad blocker
 features-adblocker-how-to-stop-seeing-too = How to stop seeing too many ads and keep companies from following you around online. An ad blocker guide from the { -brand-name-firefox } web browser.
 features-adblocker-the-ad-blocker-a-secret = The ad blocker – a secret weapon against annoying ads.
 features-adblocker-so-many-ads-so-little = So many ads, so little patience… It’s time to stop the madness.
@@ -38,21 +37,6 @@ features-adblocker-ghostery-is-another-great = <a { $attrs }>Ghostery</a> is ano
 #   $attsr2 (string) - link to /firefox/mobile/android/ with other attributes
 features-adblocker-these-extensions-work-beautifully = These extensions work beautifully on both <a { $attrs1 }>{ -brand-name-firefox } for desktop</a> and <a { $attrs2 }>Android</a>.
 
-# Obsolete string (expires: 2024-11-18)
-# Variables:
-#   $url (url) - link to https://addons.mozilla.org/firefox/addon/adblocker-ultimate/
-features-adblocker-theres-adblocker-ultimate = There’s <a href="{ $url }">AdBlocker Ultimate</a> that gets rid of every single ad, but buyer beware. Some of your favorite newspapers and magazines rely on advertising. Too many people blocking their ads could put them out of business.
-
-# Obsolete string (expires: 2024-11-18)
-# Variables:
-#   $url (url) - link to https://addons.mozilla.org/firefox/addon/popup-blocker/
-features-adblocker-popup-ads-are-the-worst = Popup ads are the worst. Block them with <a href="{ $url }">Popup Blocker</a> and never deal with another annoying popup again.
-
-# Obsolete string (expires: 2024-11-18)
-# Variables:
-#   $url (url) - link to https://addons.mozilla.org/firefox/addon/adblock-for-firefox/
-features-adblocker-one-of-the-most-popular = One of the most popular ad blockers for { -brand-name-chrome }, { -brand-name-safari } and { -brand-name-firefox } is <a href="{ $url }">AdBlock</a>. Use it to block ads on { -brand-name-facebook }, { -brand-name-youtube } and { -brand-name-hulu }.
-
 features-adblocker-create-a-tracker-free = Create a tracker-free zone with Content Blocking
 
 # Variables:
@@ -82,12 +66,6 @@ features-adblocker-take-a-bite-out-of-cookies = Take a bite out of cookies
 features-adblocker-cookies-are-sent-by-websites = <a href="{ $url }">Cookies</a> are sent by websites you visit. They live on your computer and monitor what you’ve been doing on a site. When an airline hikes your rates because you’ve looked at plane tickets once that day, that is the handiwork of a cookie.
 
 features-adblocker-in-firefox-you-can-block = In { -brand-name-firefox }, you can block all third-party cookies or just those set by trackers. Be aware that blocking all cookies can break some sites.
-features-adblocker-send-a-do-not-track-signal = Send a Do Not Track signal
-
-# Variables:
-#   $url (url) - link to https://support.mozilla.org/kb/how-do-i-turn-do-not-track-feature
-features-adblocker-if-you-dont-want-your = If you don’t want your online behavior used for ads, you can send websites a polite “thanks but no thanks” letter by checking the <a href="{ $url }">Do Not Track</a> option of { -brand-name-firefox }. Participation is voluntary, but the websites that participate will stop tracking you immediately.
-
 features-adblocker-speed-up-thanks-to-ad = Speed up thanks to ad blockers
 features-adblocker-in-some-cases-an-ad-blocker = In some cases, an ad blocker can help your browser go faster. When an ad is loading, it can slow down a website. At the same time, it takes longer to find what you’re looking for if you’re too busy closing yet another ad.
 

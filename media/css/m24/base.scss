@@ -2,81 +2,57 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-
-@import '~@mozilla-protocol/core/protocol/css/includes/lib';
-
 // variables
-@import 'vars/animation';
-@import 'vars/color';
-@import 'vars/fonts';
-@import 'vars/grid';
-@import 'vars/spacing';
-@import 'vars/text';
+@use '~@mozilla-protocol/core/protocol/css/includes/lib' as *;
+@use 'vars/lib' as *;
 
 // components
-@import 'consider';
-@import 'copy';
-@import 'donate';
-@import 'grid';
-@import 'hero';
-@import 'showcase';
-@import 'spring';
-@import 'theme';
-@import 'transition';
+@use 'button';
+@use 'intro';
+@use 'gallery';
+@use 'showcase';
+@use 'theme';
+@use 'transition';
 
 /* Protocol overrides ------------------------------------------------------------ */
 
 body {
     background-color: $m24-color-white;
     color: $m24-color-black;
-    font-family: var(--body-font-family);
-    font-variant-ligatures: none;
-    line-height: var(--body-line-height);
 }
 
 h1, h2, h3, h4, h5 {
     color: $m24-color-black;
-    font-family: var(--title-font-family);
-    font-variant-ligatures: none;
-    font-weight: bold;
-    line-height: 1.1;
+    font-weight: 600;
 }
 
 strong {
     font-weight: 900;
 }
 
-a:link {
+a:link,
+a:visited,
+a:hover,
+a:focus,
+a:active {
     color: $m24-color-black;
-
-    &:hover,
-    &:focus {
-        color: $m24-color-black;
-    }
-
-    &:visited{
-        &:hover,
-        &:focus {
-            color: $m24-color-black;
-        }
-    }
 }
 
 *:focus,
 *:focus-visible {
-    outline-offset: 6px;
+    outline-offset: $spacer-2xs;
 }
 
 /* ------------------------------------------------------------------------------- */
-
-.m24-c-container {
-    @include container;
-}
-
 .m24-c-content {
     @include container;
     padding-top: $spacer-xl;
     padding-bottom: $spacer-xl;
+    width: 100%;
+
+    &.padding-top-0 {
+        padding-top: 0;
+    }
 }
 
 /* ------------------------------------------------------------------------------- */
@@ -84,28 +60,47 @@ a:link {
 .m24-c-section-cta {
     margin-bottom: 0;
     padding: $spacer-xs 0;
-    text-align: right;
+    text-align: end;
 }
 
 .m24-c-cta {
+    @include bidi(((background-position, left var(--cta-bg-position, 100%) top 100%, right var(--cta-bg-position, 100%) top 100%),));
+    box-decoration-break: clone;
     color: $m24-color-black;
-    display: inline-block;
+    display: inline; // required for box cloning
     font-family: var(--title-font-family);
     font-size: $text-button-lg;
+    font-weight: 600;
+    line-height: 1.1;
+    background-image:
+        linear-gradient(to right, $m24-color-black 0, $m24-color-black 33%,transparent 33%, transparent 66%, $m24-color-black 66%, $m24-color-black 100%);
+    background-repeat: no-repeat;
+    background-size: 400% 2px;
 
-    &:hover {
-        color: $m24-color-dark-green;
+    &:link {
+        text-decoration: none;
     }
 
+    &:link:hover {
+        --cta-bg-position: 0%;
+        transition: $slow $bezier;
+    }
+
+    &:active,
     &:focus-visible {
         color: $m24-color-black;
     }
 
-    &:active {
-        color: $m24-color-black;
+    &.m24-t-xl {
+        font-size: $text-button-xl;
     }
 
-    &.m24-t-small {
+    &.m24-t-md {
+        font-family: var(--body-font-family);
+        font-size: $text-button-md;
+    }
+
+    &.m24-t-sm {
         font-family: var(--body-font-family);
         font-size: $text-button-sm;
     }

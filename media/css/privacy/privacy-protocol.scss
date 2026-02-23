@@ -2,20 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-$image-path: '/media/protocol/img';
+@use '~@mozilla-protocol/core/protocol/css/includes/lib' as *;
+@use '~@mozilla-protocol/core/protocol/css/includes/mixins/details';
+@use '~@mozilla-protocol/core/protocol/css/components/sidebar-menu';
+@use '~@mozilla-protocol/core/protocol/css/templates/main-with-sidebar';
 
-@import '~@mozilla-protocol/core/protocol/css/includes/lib';
-@import '~@mozilla-protocol/core/protocol/css/includes/mixins/details';
-@import '~@mozilla-protocol/core/protocol/css/components/sidebar-menu';
-@import '~@mozilla-protocol/core/protocol/css/templates/main-with-sidebar';
-
-@import '../protocol/basic-article';
+@use '../protocol/basic-article';
 
 $border: 2px solid $color-marketing-gray-20;
-
-.mzp-c-sidemenu .mzp-c-sidemenu-title {
-    font-family: var(--body-font-family);
-}
 
 @media #{$mq-md} {
     .mzp-l-sidebar {
@@ -197,6 +191,10 @@ $border: 2px solid $color-marketing-gray-20;
     margin-top: $spacing-2xl;
     padding: $spacing-2xl 0;
 
+    h2 {
+        @include text-title-sm;
+    }
+
     h3 {
         @include visually-hidden;
     }
@@ -275,5 +273,31 @@ $border: 2px solid $color-marketing-gray-20;
             @include text-body-md;
             font-weight: normal;
         }
+    }
+}
+
+// * -------------------------------------------------------------------------- */
+// Firefox Privacy Notice Update Dec 2025
+
+#privacy-firefox-update-dec2025 {
+    .mzp-has-sidebar .mzp-l-main {
+        @media #{$mq-md} {
+            width: 100%;
+        }
+
+        @media #{$mq-lg} {
+            width: 75%;
+            margin: 0 auto;
+        }
+    }
+}
+
+
+// * -------------------------------------------------------------------------- */
+// Mozilla accounts page variant
+
+.mozilla-accounts {
+    .mzp-u-data-table td {
+        vertical-align: top;
     }
 }

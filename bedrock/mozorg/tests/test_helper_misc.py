@@ -106,7 +106,7 @@ class TestL10nCSS(TestCase):
     static_url_dev = "/static/"
     cdn_url = "//mozorg.cdn.mozilla.net"
     static_url_prod = cdn_url + static_url_dev
-    markup = '<link rel="stylesheet" media="screen,projection,tv" href=' '"%scss/l10n/%s/intl.css">'
+    markup = '<link rel="stylesheet" href="%scss/l10n/%s/intl.css">'
 
     def _render(self, locale):
         req = self.rf.get("/")
@@ -205,75 +205,13 @@ class TestDonateUrl(TestCase):
 
     def test_donate_url_with_location_param(self):
         """Should include location parameter when supplied"""
-        assert self._render(location="moco-donate-footer") == ("https://foundation.mozilla.org/?form=moco-donate-footer")
+        assert self._render(location="moco-donate-footer") == ("https://www.mozillafoundation.org/?form=moco-donate-footer")
 
     def test_donate_url_no_params(self):
         """Should link to /donate/ when no location parameter is supplied"""
-        assert self._render() == ("https://foundation.mozilla.org/donate/")
+        assert self._render() == ("https://www.mozillafoundation.org/donate/")
 
-
-class TestFirefoxTwitterUrl(TestCase):
     rf = RequestFactory()
-
-    def _render(self, locale):
-        req = self.rf.get("/")
-        req.locale = locale
-        return render("{{ firefox_twitter_url() }}", {"request": req})
-
-    def test_firefox_twitter_url_no_locale(self):
-        """No locale, fallback to default account"""
-        assert self._render("") == "https://twitter.com/firefox"
-
-    def test_firefox_twitter_url_english(self):
-        """en-US locale, default account"""
-        assert self._render("en-US") == "https://twitter.com/firefox"
-
-    def test_firefox_twitter_url_spanish(self):
-        """es-ES locale, a local account"""
-        assert self._render("es-ES") == "https://twitter.com/firefox_es"
-
-    def test_firefox_twitter_url_portuguese(self):
-        """pt-BR locale, a local account"""
-        assert self._render("pt-BR") == "https://twitter.com/firefoxbrasil"
-
-    def test_firefox_twitter_url_other_locale(self):
-        """No account for locale, fallback to default account"""
-        assert self._render("es-AR") == "https://twitter.com/firefox"
-        assert self._render("es-CL") == "https://twitter.com/firefox"
-        assert self._render("es-MX") == "https://twitter.com/firefox"
-        assert self._render("pt-PT") == "https://twitter.com/firefox"
-
-
-class TestMozillaTwitterUrl(TestCase):
-    rf = RequestFactory()
-
-    def _render(self, locale):
-        req = self.rf.get("/")
-        req.locale = locale
-        return render("{{ mozilla_twitter_url() }}", {"request": req})
-
-    def test_mozilla_twitter_url_no_locale(self):
-        """No locale, fallback to default account"""
-        assert self._render("") == "https://twitter.com/mozilla"
-
-    def test_mozilla_twitter_url_english(self):
-        """en-US locale, default account"""
-        assert self._render("en-US") == "https://twitter.com/mozilla"
-
-    def test_mozilla_twitter_url_french(self):
-        """fr locale, a local account"""
-        assert self._render("fr") == "https://twitter.com/mozilla_france"
-
-    def test_mozilla_twitter_url_german(self):
-        """de locale, a local account"""
-        assert self._render("de") == "https://twitter.com/mozilla_germany"
-
-    def test_mozilla_twitter_url_other_locale(self):
-        """No account for locale, fallback to default account"""
-        assert self._render("es-AR") == "https://twitter.com/mozilla"
-        assert self._render("es-CL") == "https://twitter.com/mozilla"
-        assert self._render("es-MX") == "https://twitter.com/mozilla"
-        assert self._render("pt-PT") == "https://twitter.com/mozilla"
 
 
 class TestMozillaInstagramUrl(TestCase):
@@ -562,6 +500,24 @@ class TestPicture(TestCase):
         )
         self.assertEqual(markup, expected)
 
+    def test_picture_with_optional_height_and_width(self):
+        """Should return expected markup with optional attributes"""
+        expected = (
+            "<picture>"
+            '<source media="(max-width: 799px)" srcset="/media/img/panda-mobile.png" width="200" height="100">'
+            '<source media="(min-width: 800px)" srcset="/media/img/panda-desktop.png" width="300">'
+            '<img src="/media/img/panda-mobile.png" alt="">'
+            "</picture>"
+        )
+        markup = self._render(
+            "img/panda-mobile.png",
+            [
+                {"media": "(max-width: 799px)", "srcset": {"img/panda-mobile.png": "default"}, "width": "200", "height": "100"},
+                {"media": "(min-width: 800px)", "srcset": {"img/panda-desktop.png": "default"}, "width": "300"},
+            ],
+        )
+        self.assertEqual(markup, expected)
+
     def test_picture_with_optional_attributes(self):
         """Should return expected markup with optional attributes"""
         expected = (
@@ -587,7 +543,7 @@ class TestAbsoluteURLFilter(TestCase):
     static_url_dev = "/static/"
     static_url_prod = "//mozorg.cdn.mozilla.net/static/"
     static_url_full = "https://mozorg.cdn.mozilla.net/static/"
-    image_path = "img/mozorg/mozilla-256.jpg"
+    image_path = "img/m24/og.png"
     inline_template = "{{ static('%s')|absolute_url }}" % image_path
     block_template = "{% filter absolute_url %}{% block page_image %}" + "{{ static('%s') }}" % image_path + "{% endblock %}{% endfilter %}"
 
@@ -611,10 +567,10 @@ class TestAbsoluteURLFilter(TestCase):
     @override_settings(DEV=False)
     def test_urls(self):
         """Should return a fully qualified URL including a protocol"""
-        expected = "https://www.mozilla.org/en-US/firefox/new/"
-        assert misc.absolute_url("/en-US/firefox/new/") == expected
-        assert misc.absolute_url("//www.mozilla.org/en-US/firefox/new/") == expected
-        assert misc.absolute_url("https://www.mozilla.org/en-US/firefox/new/") == expected
+        expected = "https://www.mozilla.org/en-US/about/"
+        assert misc.absolute_url("/en-US/about/") == expected
+        assert misc.absolute_url("//www.mozilla.org/en-US/about/") == expected
+        assert misc.absolute_url("https://www.mozilla.org/en-US/about/") == expected
 
 
 @pytest.mark.parametrize(
@@ -737,77 +693,62 @@ class TestAppStoreURL(TestCase):
 
     def test_firefox_app_store_url_no_locale(self):
         """No locale, fallback to default URL"""
-        assert self._render("firefox", "", "") == "https://apps.apple.com/app/apple-store/id989804926"
+        assert self._render("firefox", "", "") == "https://apps.apple.com/app/apple-store/id989804926?mz_pr=firefox_mobile"
 
     def test_firefox_app_store_url_default(self):
         """should fallback to default URL"""
-        assert self._render("firefox", "", "ar") == "https://apps.apple.com/app/apple-store/id989804926"
-        assert self._render("firefox", "", "zu") == "https://apps.apple.com/app/apple-store/id989804926"
+        assert self._render("firefox", "", "ar") == "https://apps.apple.com/app/apple-store/id989804926?mz_pr=firefox_mobile"
+        assert self._render("firefox", "", "zu") == "https://apps.apple.com/app/apple-store/id989804926?mz_pr=firefox_mobile"
 
     def test_firefox_app_store_url_localized(self):
         """should return localized URL"""
-        assert self._render("firefox", "", "en-US") == "https://apps.apple.com/us/app/apple-store/id989804926"
-        assert self._render("firefox", "", "es-ES") == "https://apps.apple.com/es/app/apple-store/id989804926"
-        assert self._render("firefox", "", "de") == "https://apps.apple.com/de/app/apple-store/id989804926"
+        assert self._render("firefox", "", "en-US") == "https://apps.apple.com/us/app/apple-store/id989804926?mz_pr=firefox_mobile"
+        assert self._render("firefox", "", "es-ES") == "https://apps.apple.com/es/app/apple-store/id989804926?mz_pr=firefox_mobile"
+        assert self._render("firefox", "", "de") == "https://apps.apple.com/de/app/apple-store/id989804926?mz_pr=firefox_mobile"
 
     def test_firefox_app_store_url_localized_campaign(self):
         """should return localized URL with additional campaign parameters"""
         assert (
             self._render("firefox", "firefox-home", "en-US")
-            == "https://apps.apple.com/us/app/apple-store/id989804926?pt=373246&amp;ct=firefox-home&amp;mt=8"
+            == "https://apps.apple.com/us/app/apple-store/id989804926?mz_pr=firefox_mobile&amp;pt=373246&amp;ct=firefox-home&amp;mt=8"
         )
         assert (
             self._render("firefox", "firefox-home", "es-ES")
-            == "https://apps.apple.com/es/app/apple-store/id989804926?pt=373246&amp;ct=firefox-home&amp;mt=8"
+            == "https://apps.apple.com/es/app/apple-store/id989804926?mz_pr=firefox_mobile&amp;pt=373246&amp;ct=firefox-home&amp;mt=8"
         )
         assert (
             self._render("firefox", "firefox-home", "de")
-            == "https://apps.apple.com/de/app/apple-store/id989804926?pt=373246&amp;ct=firefox-home&amp;mt=8"
+            == "https://apps.apple.com/de/app/apple-store/id989804926?mz_pr=firefox_mobile&amp;pt=373246&amp;ct=firefox-home&amp;mt=8"
         )
 
     def test_focus_app_store_url_localized_campaign(self):
         """should return localized URL with additional campaign parameters"""
         assert (
             self._render("focus", "firefox-home", "en-US")
-            == "https://apps.apple.com/us/app/apple-store/id1055677337?pt=373246&amp;ct=firefox-home&amp;mt=8"
+            == "https://apps.apple.com/us/app/apple-store/id1055677337?mz_pr=focus&amp;pt=373246&amp;ct=firefox-home&amp;mt=8"
         )
         assert (
             self._render("focus", "firefox-home", "es-ES")
-            == "https://apps.apple.com/es/app/apple-store/id1055677337?pt=373246&amp;ct=firefox-home&amp;mt=8"
+            == "https://apps.apple.com/es/app/apple-store/id1055677337?mz_pr=focus&amp;pt=373246&amp;ct=firefox-home&amp;mt=8"
         )
         assert (
             self._render("focus", "firefox-home", "de")
-            == "https://apps.apple.com/de/app/apple-store/id1073435754?pt=373246&amp;ct=firefox-home&amp;mt=8"
-        )
-
-    def test_pocket_app_store_url_localized_campaign(self):
-        """should return localized URL with additional campaign parameters"""
-        assert (
-            self._render("pocket", "firefox-home", "en-US")
-            == "https://apps.apple.com/us/app/apple-store/id309601447?pt=373246&amp;ct=firefox-home&amp;mt=8"
-        )
-        assert (
-            self._render("pocket", "firefox-home", "es-ES")
-            == "https://apps.apple.com/es/app/apple-store/id309601447?pt=373246&amp;ct=firefox-home&amp;mt=8"
-        )
-        assert (
-            self._render("pocket", "firefox-home", "de")
-            == "https://apps.apple.com/de/app/apple-store/id309601447?pt=373246&amp;ct=firefox-home&amp;mt=8"
+            == "https://apps.apple.com/de/app/apple-store/id1073435754?mz_pr=focus&amp;pt=373246&amp;ct=firefox-home&amp;mt=8"
         )
 
     def test_vpn_app_store_url_localized_campaign(self):
         """should return localized URL with additional campaign parameters"""
         assert (
             self._render("vpn", "vpn-landing-page", "en-US")
-            == "https://apps.apple.com/us/app/apple-store/id1489407738?pt=373246&amp;ct=vpn-landing-page&amp;mt=8"
+            == "https://apps.apple.com/us/app/apple-store/id1489407738?mz_pr=vpn&amp;pt=373246&amp;ct=vpn-landing-page&amp;mt=8"
         )
         assert (
             self._render("vpn", "vpn-landing-page", "es-ES")
-            == "https://apps.apple.com/es/app/apple-store/id1489407738?pt=373246&amp;ct=vpn-landing-page&amp;mt=8"
+            == "https://apps.apple.com/es/app/apple-store/id1489407738?mz_pr=vpn&amp;pt=373246&amp;ct=vpn-landing-page&amp;mt=8"
         )
         assert (
             self._render("vpn", "vpn-landing-page", "de")
-            == "https://apps.apple.com/de/app/apple-store/id1489407738?pt=373246&amp;ct=vpn-landing-page&amp;mt=8"
+            == "https://apps.apple.com/de/app/apple-store/id1489407738?mz_pr=vpn&amp;pt=373246&amp;ct=vpn-landing-page&amp;mt=8"
         )
 
 
@@ -862,21 +803,6 @@ class TestPlayStoreURL(TestCase):
             == "https://play.google.com/store/apps/details?id=org.mozilla.klar&amp;referrer=utm_source%3Dwww.mozilla.org%26utm_medium%3Dreferral%26utm_campaign%3Dfirefox-home&amp;hl=de"
         )
 
-    def test_pocket_play_store_url_localized_campaign(self):
-        """should return localized URL with additional campaign parameters"""
-        assert (
-            self._render("pocket", "firefox-home", "en-US")
-            == "https://play.google.com/store/apps/details?id=com.ideashower.readitlater.pro&amp;referrer=utm_source%3Dwww.mozilla.org%26utm_medium%3Dreferral%26utm_campaign%3Dfirefox-home&amp;hl=en"
-        )
-        assert (
-            self._render("pocket", "firefox-home", "es-ES")
-            == "https://play.google.com/store/apps/details?id=com.ideashower.readitlater.pro&amp;referrer=utm_source%3Dwww.mozilla.org%26utm_medium%3Dreferral%26utm_campaign%3Dfirefox-home&amp;hl=es"
-        )
-        assert (
-            self._render("pocket", "firefox-home", "de")
-            == "https://play.google.com/store/apps/details?id=com.ideashower.readitlater.pro&amp;referrer=utm_source%3Dwww.mozilla.org%26utm_medium%3Dreferral%26utm_campaign%3Dfirefox-home&amp;hl=de"
-        )
-
     def test_vpn_play_store_url_localized_campaign(self):
         """should return localized URL with additional campaign parameters"""
         assert (
@@ -907,34 +833,38 @@ class TestMSStoreURL(TestCase):
 
     def test_firefox_release_ms_store_url(self):
         """should return a MS Store URL for Firefox release channel"""
-        assert self._render(product="firefox") == "https://apps.microsoft.com/detail/9nzvdkpmr9rd?mode=mini"
+        assert self._render(product="firefox") == "https://apps.microsoft.com/detail/9nzvdkpmr9rd?mode=mini&amp;mz_cn=release"
 
     def test_firefox_beta_ms_store_url(self):
         """should return a MS Store URL for Firefox Beta channel"""
-        assert self._render(product="firefox_beta") == "https://apps.microsoft.com/detail/9nzw26frndln?mode=mini"
+        assert self._render(product="firefox_beta") == "https://apps.microsoft.com/detail/9nzw26frndln?mode=mini&amp;mz_cn=beta"
 
     def test_firefox_ms_store_url_launch_mode(self):
         """should return a MS Store URL including different launch mode parameters"""
-        assert self._render(product="firefox", mode="full") == "https://apps.microsoft.com/detail/9nzvdkpmr9rd?mode=full"
-        assert self._render(product="firefox", mode="direct") == "https://apps.microsoft.com/detail/9nzvdkpmr9rd?mode=direct"
+        assert self._render(product="firefox", mode="full") == "https://apps.microsoft.com/detail/9nzvdkpmr9rd?mode=full&amp;mz_cn=release"
+        assert self._render(product="firefox", mode="direct") == "https://apps.microsoft.com/detail/9nzvdkpmr9rd?mode=direct&amp;mz_cn=release"
 
     def test_firefox_ms_store_url_campaign(self):
         """should return a MS Store URL including campaign parameters"""
         assert (
-            self._render(product="firefox", campaign="mozorg-firefox-home")
-            == "https://apps.microsoft.com/detail/9nzvdkpmr9rd?mode=mini&amp;cid=mozorg-firefox-home"
+            self._render(product="firefox", campaign="test-firefox-home")
+            == "https://apps.microsoft.com/detail/9nzvdkpmr9rd?mode=mini&amp;cid=test-firefox-home&amp;mz_cn=release"
         )
 
     def test_firefox_ms_store_url_protocol_handler(self):
         """should return a MS Store URL including campaign parameters"""
         assert (
-            self._render(product="firefox", campaign="mozorg-firefox-home", handler="ms-windows-store")
-            == "ms-windows-store://pdp/?productid=9nzvdkpmr9rd&amp;mode=mini&amp;cid=mozorg-firefox-home"
+            self._render(product="firefox", campaign="test-firefox-home", handler="ms-windows-store")
+            == "ms-windows-store://pdp/?productid=9nzvdkpmr9rd&amp;mode=mini&amp;cid=test-firefox-home&amp;mz_cn=release"
         )
         assert (
-            self._render(product="firefox_beta", campaign="mozorg-firefox-home", handler="ms-windows-store")
-            == "ms-windows-store://pdp/?productid=9nzw26frndln&amp;mode=mini&amp;cid=mozorg-firefox-home"
+            self._render(product="firefox_beta", campaign="test-firefox-home", handler="ms-windows-store")
+            == "ms-windows-store://pdp/?productid=9nzw26frndln&amp;mode=mini&amp;cid=test-firefox-home&amp;mz_cn=beta"
         )
+
+    def test_firefox_unknown_product_ms_store_url(self):
+        """should return a MS Store URL with unrecognized channel for unknown product"""
+        assert self._render(product="unknown_product") == "https://apps.microsoft.com/detail/9nzvdkpmr9rd?mode=mini&amp;mz_cn=unrecognized"
 
 
 class TestLangShort(TestCase):
@@ -1013,42 +943,6 @@ class TestRelayFxAButton(TestCase):
             '&utm_source=mozilla.org-whatsnew&utm_medium=referral&utm_campaign=whatsnew96" data-action="https://accounts.firefox.com/" '
             'class="js-fxa-cta-link js-fxa-product-button mzp-c-button mzp-t-product relay-main-cta-button" '
             'data-cta-text="Sign In to Relay" data-cta-type="fxa-relay" data-cta-position="primary">Sign In to Relay</a>'
-        )
-        self.assertEqual(markup, expected)
-
-
-@override_settings(FXA_ENDPOINT=TEST_FXA_ENDPOINT)
-class TestPocketFxAButton(TestCase):
-    rf = RequestFactory()
-
-    def _render(
-        self, entrypoint, button_text, class_name=None, is_button_class=True, include_metrics=True, optional_parameters=None, optional_attributes=None
-    ):
-        req = self.rf.get("/")
-        req.locale = "en-US"
-        return render(
-            "{{{{ pocket_fxa_button('{0}', '{1}', '{2}', {3}, {4}, {5}, {6}) }}}}".format(
-                entrypoint, button_text, class_name, is_button_class, include_metrics, optional_parameters, optional_attributes
-            ),
-            {"request": req},
-        )
-
-    def test_pocket_fxa_button(self):
-        """Should return expected markup"""
-        markup = self._render(
-            entrypoint="mozilla.org-firefox-pocket",
-            button_text="Try Pocket Now",
-            class_name="pocket-main-cta-button",
-            is_button_class=True,
-            include_metrics=True,
-            optional_parameters={"s": "ffpocket", "foo": "bar"},
-            optional_attributes={"data-cta-text": "Try Pocket Now", "data-cta-type": "pocket", "data-cta-position": "primary"},
-        )
-        expected = (
-            '<a href="https://getpocket.com/ff_signup?entrypoint=mozilla.org-firefox-pocket&form_type=button'
-            '&utm_source=mozilla.org-firefox-pocket&utm_medium=referral&s=ffpocket&foo=bar" data-action="https://accounts.firefox.com/" '
-            'class="js-fxa-cta-link js-fxa-product-button mzp-c-button mzp-t-product pocket-main-cta-button" '
-            'data-cta-text="Try Pocket Now" data-cta-type="pocket" data-cta-position="primary">Try Pocket Now</a>'
         )
         self.assertEqual(markup, expected)
 

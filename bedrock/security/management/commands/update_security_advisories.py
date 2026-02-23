@@ -13,6 +13,7 @@ from django.db.models import Count
 
 from dateutil.parser import parse as parsedate
 
+from bedrock.base.sanitization import sanitize_html
 from bedrock.security.models import HallOfFamer, MitreCVE, Product, SecurityAdvisory
 from bedrock.security.utils import (
     FILENAME_RE,
@@ -35,6 +36,66 @@ SM_RE = re.compile(r"seamonkey", flags=re.IGNORECASE)
 FNULL = open(os.devnull, "w")
 HOF_FILES = ["client.yml", "web.yml"]
 HOF_DIRECTORY = "bug-bounty-hof"
+
+# Allowlists for advisory HTML sanitization.
+# Tags come from markdown output and the security/partials/cve.html template.
+ADVISORY_ALLOWED_TAGS = frozenset(
+    {
+        # Markdown output
+        "a",
+        "abbr",
+        "b",
+        "blockquote",
+        "br",
+        "code",
+        "del",
+        "em",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "hr",
+        "i",
+        "img",
+        "li",
+        "ol",
+        "p",
+        "pre",
+        "small",
+        "strong",
+        "ul",
+        # CVE partial template structure
+        "section",
+        "dl",
+        "dt",
+        "dd",
+        "span",
+    }
+)
+ADVISORY_ALLOWED_ATTRS = {
+    "*": ["class", "id"],
+    "a": ["href"],
+    "img": ["src", "srcset", "alt"],
+    "span": ["class"],
+}
+
+
+def strip_html_comments(html):
+    """Remove HTML comments (<!-- ... -->) from advisory HTML.
+
+    Some older advisories contain HTML comments (e.g. commented-out CVE
+    placeholders).  The sanitizer escapes these into visible &lt;!-- … --&gt;
+    text, so we strip them before sanitization.
+    """
+    return re.sub(r"<!--.*?-->", "", html, flags=re.DOTALL)
+
+
+def sanitize_advisory_html(html):
+    """Sanitize advisory HTML using an allowlist of tags and attributes."""
+    html = strip_html_comments(html)
+    return sanitize_html(html, ADVISORY_ALLOWED_TAGS, ADVISORY_ALLOWED_ATTRS)
 
 
 def fix_product_name(name):
@@ -141,7 +202,7 @@ def add_or_update_cve(data):
             "title": cve_title,
             "impact": advisory["impact"] or "",
             "reporter": advisory["reporter"] or "",
-            "description": advisory["description"] or "",
+            "description": advisory.get("description", "") or "",
             "bugs": advisory["bugs"],
         }
         try:
@@ -178,6 +239,7 @@ def update_db_from_file(filename):
         raise RuntimeError(f"Unknown file type {filename}")
 
     data, html = parser(filename)
+    html = sanitize_advisory_html(html)
     if "advisories" in data:
         add_or_update_cve(data)
     return add_or_update_advisory(data, html)

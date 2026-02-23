@@ -2,10 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-$font-path: '/media/protocol/fonts';
-$image-path: '/media/protocol/img';
-
-@import '~@mozilla-protocol/core/protocol/css/includes/lib';
+@use '~@mozilla-protocol/core/protocol/css/includes/lib' as *;
 
 .platform-download-header {
     background-color: $color-marketing-gray-10;
@@ -35,6 +32,22 @@ $image-path: '/media/protocol/img';
 
 .vpn-download-instructions {
     padding-top: $spacing-xl;
+
+    &.windows {
+        @media #{$mq-lg} {
+            .mzp-l-columns {
+                grid-template-columns: repeat(6, 1fr);
+            }
+
+            .mzp-c-picto {
+                grid-column: span 2;
+
+                &:nth-of-type(4) {
+                    grid-column: 2/4;
+                }
+            }
+        }
+    }
 }
 
 .mzp-c-picto {
@@ -42,6 +55,7 @@ $image-path: '/media/protocol/img';
 
     .mzp-c-picto-image {
         height: 220px;
+        object-fit: contain;
     }
 }
 

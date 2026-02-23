@@ -11,7 +11,9 @@ from os.path import abspath
 from pathlib import Path
 from urllib.parse import urlparse
 
-from django.conf.locale import LANG_INFO  # we patch this in bedrock.base.apps.BaseAppConfig  # noqa: F401
+from django.conf.locale import (
+    LANG_INFO,  # we patch this in bedrock.base.apps.BaseAppConfig  # noqa: F401
+)
 from django.utils.functional import lazy
 
 import dj_database_url
@@ -25,9 +27,6 @@ from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.rq import RqIntegration
 
 from bedrock.base.config_manager import config
-from bedrock.contentful.constants import (
-    DEFAULT_CONTENT_TYPES as CONTENTFUL_DEFAULT_CONTENT_TYPES,
-)
 
 # ROOT path of the project. A pathlib.Path object.
 DATA_PATH = config("DATA_PATH", default="data")
@@ -86,11 +85,16 @@ if REDIS_URL:
         "image_renditions": {"URL": f"{REDIS_URL}/0"},
     }
 
+CACHE_TIME_SHORT = config("CACHE_TIME_SHORT", parser=int, default=f"{60 * 10}")  # 10 mins
+CACHE_TIME_MED = 60 * 60  # 1 hour
+CACHE_TIME_LONG = 60 * 60 * 6  # 6 hours
+
+
 CACHES = {
     "default": {
         "BACKEND": "bedrock.base.cache.SimpleDictCache",
         "LOCATION": "default",
-        "TIMEOUT": 600,
+        "TIMEOUT": CACHE_TIME_SHORT,
         "OPTIONS": {
             "MAX_ENTRIES": 5000,
             "CULL_FREQUENCY": 4,  # 1/4 entries deleted if max reached
@@ -126,13 +130,13 @@ TIME_ZONE = config("TIME_ZONE", default="America/Los_Angeles")
 # to load the internationalization machinery.
 USE_I18N = True
 
-# If you set this to False, Django will not format dates, numbers and
-# calendars according to the current locale
-USE_L10N = True
-
 USE_TZ = True
 
 USE_ETAGS = config("USE_ETAGS", default=str(not DEBUG), parser=bool)
+
+# Use the "X-Forwarded-Host" header from the CDN to set the Hostname
+# https://mozilla-hub.atlassian.net/browse/SE-4263
+USE_X_FORWARDED_HOST = config("USE_X_FORWARDED_HOST", default="False", parser=bool)
 
 # just here so Django doesn't complain
 TEST_RUNNER = "django.test.runner.DiscoverRunner"
@@ -151,22 +155,40 @@ PROD_DETAILS_CACHE_TIMEOUT = 60 * 15  # 15 min
 PROD_DETAILS_STORAGE = config("PROD_DETAILS_STORAGE", default="product_details.storage.PDDatabaseStorage")
 # path into which to clone the p-d json repo
 PROD_DETAILS_JSON_REPO_PATH = config("PROD_DETAILS_JSON_REPO_PATH", default=data_path("product_details_json"))
-PROD_DETAILS_JSON_REPO_URI = config("PROD_DETAILS_JSON_REPO_URI", default="https://github.com/mozilla-releng/product-details.git")
+PROD_DETAILS_JSON_REPO_URI = config(
+    "PROD_DETAILS_JSON_REPO_URI",
+    default="https://github.com/mozilla-releng/product-details.git",
+)
 PROD_DETAILS_JSON_REPO_BRANCH = config("PROD_DETAILS_JSON_REPO_BRANCH", default="production")
 # path to updated p-d data for testing before loading into DB
 PROD_DETAILS_TEST_DIR = str(Path(PROD_DETAILS_JSON_REPO_PATH).joinpath("public", "1.0"))
 
 # Regions defined on the `/locales/` page.
 LOCALES_BY_REGION = {
-    "Americas": ["azz", "cak", "en-CA", "en-US", "es-AR", "es-CL", "es-MX", "gn", "is", "pt-BR", "trs"],
+    "Americas": [
+        "azz",
+        "cak",
+        "en-CA",
+        "en-US",
+        "es-AR",
+        "es-CL",
+        "es-MX",
+        "gn",
+        "is",
+        "pt-BR",
+        "trs",
+    ],
     "Asia Pacific": [
         "bn",
+        "gu-IN",
         "hi-IN",
         "id",
         "ja",
         "kk",
         "km",
+        "kn",
         "ko",
+        "lo",
         "ml",
         "mr",
         "ms",
@@ -176,6 +198,7 @@ LOCALES_BY_REGION = {
         "si",
         "ta",
         "te",
+        "tg",
         "th",
         "tl",
         "ur",
@@ -239,7 +262,19 @@ LOCALES_BY_REGION = {
         "uk",
         "uz",
     ],
-    "Middle East and Africa": ["ach", "af", "ar", "az", "fa", "ff", "gu-IN", "he", "kab", "kn", "skr", "son", "xh"],
+    "Middle East and Africa": [
+        "ach",
+        "af",
+        "ar",
+        "az",
+        "fa",
+        "ff",
+        "he",
+        "kab",
+        "skr",
+        "son",
+        "xh",
+    ],
 }
 
 
@@ -253,13 +288,10 @@ def _put_default_lang_first(langs, default_lang=LANGUAGE_CODE):
 # Our accepted production locales are the values from the above, plus an exception.
 PROD_LANGUAGES = _put_default_lang_first(sorted(sum(LOCALES_BY_REGION.values(), [])) + ["ja-JP-mac"])
 
-GITHUB_REPO = "https://github.com/mozilla/bedrock"
-
 # Global L10n files.
 FLUENT_DEFAULT_FILES = [
     "banners/consent-banner",
     "banners/firefox-app-store",
-    "banners/m24-pencil-banner",
     "brands",
     "download_button",
     "footer",
@@ -296,29 +328,6 @@ FLUENT_PATHS = [
     FLUENT_LOCAL_PATH,
     # remote FTL files from l10n team
     FLUENT_REPO_PATH,
-]
-
-# Templates to exclude from having an "edit this page" link in the footer
-# these are typically ones for which most of the content is in the DB
-EXCLUDE_EDIT_TEMPLATES = [
-    "firefox/releases/nightly-notes.html",
-    "firefox/releases/dev-browser-notes.html",
-    "firefox/releases/esr-notes.html",
-    "firefox/releases/beta-notes.html",
-    "firefox/releases/aurora-notes.html",
-    "firefox/releases/release-notes.html",
-    "firefox/releases/notes.html",
-    "firefox/releases/system_requirements.html",
-    "mozorg/credits.html",
-    "mozorg/about/forums.html",
-    "security/advisory.html",
-    "security/advisories.html",
-    "security/product-advisories.html",
-    "security/known-vulnerabilities.html",
-]
-# Also allow entire directories to be skipped
-EXCLUDE_EDIT_TEMPLATES_DIRECTORIES = [
-    "cms",
 ]
 
 IGNORE_LANG_DIRS = [
@@ -448,7 +457,6 @@ SUPPORTED_NONLOCALES = [
     # from redirects.urls
     "media",
     "static",
-    "certs",
     "images",  # root_files
     "credits",
     "robots.txt",
@@ -472,8 +480,8 @@ SUPPORTED_NONLOCALES = [
 # Paths that can exist either with or without a locale code in the URL.
 # Matches the whole URL path
 SUPPORTED_LOCALE_IGNORE = [
-    "/sitemap_none.xml",  # in sitemap urls
-    "/sitemap.xml",  # in sitemap urls
+    "/all-urls-global.xml",  # in sitemap urls
+    "/all-urls.xml",  # in sitemap urls
 ]
 # Pages that we don't want to be indexed by search engines.
 # Only impacts sitemap generator. If you need to disallow indexing of
@@ -494,6 +502,7 @@ NOINDEX_URLS = [
     r"^firefox/this-browser-comes-highly-recommended/",
     r"^firefox/nightly/notes/feed/$",
     r"^firefox.*/all/$",
+    r"^firefox/landing/",
     r"^.+/(firstrun|whatsnew)/$",
     r"^m/",
     r"^newsletter/(confirm|existing|hacks\.mozilla\.org|recovery|updated|fxa-error)/",
@@ -501,7 +510,6 @@ NOINDEX_URLS = [
     r"^newsletter/country/success/",
     r"^newsletter/newsletter-strings\.json",
     r"^products/vpn/invite/waitlist/",
-    r"^products/monitor/waitlist-plus/",
     r"^products/monitor/waitlist-scan/",
     r"/system-requirements/$",
     r".*/(firstrun|thanks)/$",
@@ -524,25 +532,29 @@ EXTRA_INDEX_URLS = {
     "/about/legal/impressum/": ["de"],
 }
 
-SITEMAPS_REPO = config("SITEMAPS_REPO", default="https://github.com/mozmeao/www-sitemap-generator.git")
-SITEMAPS_REPO_BRANCH = config("SITEMAPS_REPO_BRANCH", default="master")
-SITEMAPS_PATH = DATA_PATH / "sitemaps"
-
 # Pages that have different URLs for different locales, e.g.
 #   'firefox/private-browsing/': {
 #       'en-US': '/firefox/features/private-browsing/',
 #   },
 ALT_CANONICAL_PATHS = {}
 
-ALLOWED_HOSTS = config(
-    "ALLOWED_HOSTS",
-    parser=ListOf(str, allow_empty=False),
-    default="www.mozilla.org,www.ipv6.mozilla.org,www.allizom.org",
-)
-ALLOWED_CIDR_NETS = config(
-    "ALLOWED_CIDR_NETS",
-    parser=ListOf(str, allow_empty=False),
-    default="",
+# NOTE:
+# - In the infra config a pod IP is prepended with a trailing comma
+# - In some environments, there might be no additional content after this comma
+# - The `allow_empty=True` ensures the split operation works even when nothing follows the comma
+# - We then use `filter()` to remove any resulting empty strings from the list
+ALLOWED_HOSTS = list(
+    filter(
+        None,
+        config(
+            "ALLOWED_HOSTS",
+            parser=ListOf(
+                str,
+                allow_empty=True,
+            ),
+            default="",
+        ),
+    )
 )
 
 # The canonical, production URL without a trailing slash
@@ -564,14 +576,14 @@ STORAGES = {
     # it will not allow uploads for the Web deployment. You will have to
     # specify a different, dedicated storage backend for the file-upload process.
     "default": {
-        "BACKEND": "storages.backends.gcloud.GoogleCloudStorage"
-        if GS_BUCKET_NAME and GS_PROJECT_ID
-        else "django.core.files.storage.FileSystemStorage",
+        "BACKEND": (
+            "storages.backends.gcloud.GoogleCloudStorage" if GS_BUCKET_NAME and GS_PROJECT_ID else "django.core.files.storage.FileSystemStorage"
+        ),
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
-        if DEBUG
-        else "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage" if DEBUG else "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+        ),
     },
 }
 
@@ -681,7 +693,6 @@ ENABLE_METRICS_VIEW_TIMING_MIDDLEWARE = config("ENABLE_METRICS_VIEW_TIMING_MIDDL
 
 MIDDLEWARE = [
     # IMPORTANT: this may be extended later in this file or via settings/__init__.py
-    "allow_cidr.middleware.AllowCIDRMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "bedrock.mozorg.middleware.HostnameMiddleware",
@@ -702,6 +713,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "bedrock.mozorg.middleware.CacheMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
+    "bedrock.cms.middleware.CMSLocaleFallbackMiddleware",
 ]
 
 ENABLE_CSP_MIDDLEWARE = config("ENABLE_CSP_MIDDLEWARE", default="true", parser=bool)
@@ -732,9 +744,11 @@ INSTALLED_APPS = [
     "wagtail.users",
     "wagtail.snippets",
     "wagtail.images",
+    "wagtail_localize_intentional_blanks",  # Must be BEFORE wagtail_localize
     "wagtail_localize_smartling",  # Has to come before wagtail_localize
     "wagtail_localize",
     "wagtail_localize.locales",  # This replaces "wagtail.locales"
+    "wagtail_localize_dashboard",  # Add after wagtail-localize
     "wagtail.search",
     "wagtaildraftsharing",  # has to come before wagtail.admin due to template overriding; also needs wagtail.snippets
     "wagtail.admin",
@@ -742,7 +756,10 @@ INSTALLED_APPS = [
     "modelcluster",
     "taggit",
     "csp",
+    "wagtail_link_block",
+    "wagtail_thumbnail_choice_block",
     # Local apps
+    "bedrock.anonym",
     "bedrock.base",
     "bedrock.cms",  # Wagtail-based CMS bases
     "bedrock.firefox",
@@ -758,7 +775,6 @@ INSTALLED_APPS = [
     "bedrock.security",
     "bedrock.releasenotes",
     "bedrock.contentcards",
-    "bedrock.contentful",
     "bedrock.utils",
     "bedrock.wordpress",
     "bedrock.sitemaps",
@@ -853,6 +869,7 @@ TEMPLATES = [
                 "wagtail.jinja2tags.core",
                 "wagtail.images.jinja2tags.images",
             ],
+            "environment": "bedrock.jinja2.bedrock_environment",
         },
     },
     {
@@ -898,6 +915,23 @@ BASKET_API_KEY = config("BASKET_API_KEY", default="")
 BASKET_TIMEOUT = config("BASKET_TIMEOUT", parser=int, default="10")
 BASKET_SUBSCRIBE_URL = f"{BASKET_URL}/news/subscribe/"
 
+# Foundation newsletters are handled through Campaign Monitor, via a proxy
+# run by Foundation, rather than going through Basket
+FOUNDATION_URL = config(
+    "FOUNDATION_URL",
+    default=("https://kmq73rfvbh.execute-api.us-east-2.amazonaws.com" if DEV else "https://abdri3ttkb.execute-api.us-east-2.amazonaws.com"),
+)
+FOUNDATION_SUBSCRIBE_URL = f"{FOUNDATION_URL}/api/newsletter/mozillaorg"
+
+# Custom languages for the Foundation signup form; need specifying directly
+# because the form config is not provided by Basket
+FOUNDATION_SUBSCRIBE_AVAILABLE_LANGUAGUES = config(
+    "FOUNDATION_SUBSCRIBE_AVAILABLE_LANGUAGUES",
+    default="en,de,fr,es,pl,pt",
+    parser=ListOf(str),
+)
+
+
 BOUNCER_URL = config("BOUNCER_URL", default="https://download.mozilla.org/")
 
 # Use a message storage mechanism that doesn't need a database.
@@ -935,21 +969,7 @@ EXTERNAL_FILES = {
 # e.g. '//mozorg.cdn.mozilla.net'
 CDN_BASE_URL = config("CDN_BASE_URL", default="")
 
-DONATE_LINK = "https://foundation.mozilla.org/{location}"
-
-# Official Firefox Twitter accounts
-FIREFOX_TWITTER_ACCOUNTS = {
-    "en-US": "https://twitter.com/firefox",
-    "es-ES": "https://twitter.com/firefox_es",
-    "pt-BR": "https://twitter.com/firefoxbrasil",
-}
-
-# Official Mozilla Twitter accounts
-MOZILLA_TWITTER_ACCOUNTS = {
-    "en-US": "https://twitter.com/mozilla",
-    "de": "https://twitter.com/mozilla_germany",
-    "fr": "https://twitter.com/mozilla_france",
-}
+DONATE_LINK = "https://www.mozillafoundation.org/{location}"
 
 # Official Firefox Instagram accounts
 MOZILLA_INSTAGRAM_ACCOUNTS = {
@@ -959,10 +979,10 @@ MOZILLA_INSTAGRAM_ACCOUNTS = {
 
 # Mozilla accounts product links
 # ***This URL *MUST* end in a traling slash!***
-FXA_ENDPOINT = config("FXA_ENDPOINT", default="https://accounts.stage.mozaws.net/" if DEV else "https://accounts.firefox.com/")
-
-# Affiliate micro service (CJMS) endpoint (issue 11212)
-CJMS_AFFILIATE_ENDPOINT = "https://stage.cjms.nonprod.cloudops.mozgcp.net/aic" if DEV else "https://cjms.services.mozilla.com/aic"
+FXA_ENDPOINT = config(
+    "FXA_ENDPOINT",
+    default=("https://accounts.stage.mozaws.net/" if DEV else "https://accounts.firefox.com/"),
+)
 
 # Google Play and Apple App Store settings
 from .appstores import (  # noqa: E402, F401
@@ -971,7 +991,6 @@ from .appstores import (  # noqa: E402, F401
     APPLE_APPSTORE_FIREFOX_LINK,
     APPLE_APPSTORE_FOCUS_LINK,
     APPLE_APPSTORE_KLAR_LINK,
-    APPLE_APPSTORE_POCKET_LINK,
     APPLE_APPSTORE_VPN_LINK,
     GOOGLE_PLAY_FIREFOX_BETA_LINK,
     GOOGLE_PLAY_FIREFOX_LINK,
@@ -980,7 +999,6 @@ from .appstores import (  # noqa: E402, F401
     GOOGLE_PLAY_FIREFOX_SEND_LINK,
     GOOGLE_PLAY_FOCUS_LINK,
     GOOGLE_PLAY_KLAR_LINK,
-    GOOGLE_PLAY_POCKET_LINK,
     GOOGLE_PLAY_VPN_LINK,
     MICROSOFT_WINDOWS_STORE_FIREFOX_BETA_DIRECT_LINK,
     MICROSOFT_WINDOWS_STORE_FIREFOX_BETA_WEB_LINK,
@@ -989,7 +1007,21 @@ from .appstores import (  # noqa: E402, F401
 )
 
 # Locales that should display the 'Send to Device' widget
-SEND_TO_DEVICE_LOCALES = ["de", "en-GB", "en-US", "es-AR", "es-CL", "es-ES", "es-MX", "fr", "id", "pl", "pt-BR", "ru", "zh-TW"]
+SEND_TO_DEVICE_LOCALES = [
+    "de",
+    "en-GB",
+    "en-US",
+    "es-AR",
+    "es-CL",
+    "es-ES",
+    "es-MX",
+    "fr",
+    "id",
+    "pl",
+    "pt-BR",
+    "ru",
+    "zh-TW",
+]
 
 SEND_TO_DEVICE_MESSAGE_SETS = {
     "default": {
@@ -1024,35 +1056,6 @@ CONTENT_CARDS_REPO = config("CONTENT_CARDS_REPO", default="https://github.com/mo
 CONTENT_CARDS_BRANCH = config("CONTENT_CARDS_BRANCH", default=content_cards_default_branch)
 CONTENT_CARDS_URL = config("CONTENT_CARDS_URL", default=STATIC_URL)
 
-CONTENTFUL_SPACE_ID = config("CONTENTFUL_SPACE_ID", raise_error=False)
-CONTENTFUL_SPACE_KEY = config("CONTENTFUL_SPACE_KEY", raise_error=False)
-CONTENTFUL_ENVIRONMENT = config("CONTENTFUL_ENVIRONMENT", default="master")
-CONTENTFUL_SPACE_API = ("preview" if DEV else "cdn") + ".contentful.com"
-CONTENTFUL_API_TIMEOUT = config("CONTENTFUL_API_TIMEOUT", default="5", parser=int)
-CONTENTFUL_CONTENT_TYPES_TO_SYNC = config(
-    "CONTENTFUL_CONTENT_TYPES_TO_SYNC",
-    default=CONTENTFUL_DEFAULT_CONTENT_TYPES,
-    parser=ListOf(str),
-)
-
-CONTENTFUL_NOTIFICATION_QUEUE_URL = config("CONTENTFUL_NOTIFICATION_QUEUE_URL", default="", raise_error=False)
-CONTENTFUL_NOTIFICATION_QUEUE_REGION = config("CONTENTFUL_NOTIFICATION_QUEUE_REGION", default="", raise_error=False)
-CONTENTFUL_NOTIFICATION_QUEUE_ACCESS_KEY_ID = config("CONTENTFUL_NOTIFICATION_QUEUE_ACCESS_KEY_ID", default="", raise_error=False)
-CONTENTFUL_NOTIFICATION_QUEUE_SECRET_ACCESS_KEY = config("CONTENTFUL_NOTIFICATION_QUEUE_SECRET_ACCESS_KEY", default="", raise_error=False)
-CONTENTFUL_NOTIFICATION_QUEUE_WAIT_TIME = config("CONTENTFUL_NOTIFICATION_QUEUE_WAIT_TIME", default="10", parser=int, raise_error=False)
-
-CONTENTFUL_HOMEPAGE_LOOKUP = {
-    # TEMPORARY lookup table for which Contentful `connectHomepage` page ID to get for which locale
-    "en-US": "58YIvwDmzSDjtvpSqstDcL",
-    "de": "4k3CxqZGjxXOjR1I0dhyto",
-}
-
-CONTENTFUL_LOCALE_SUFFICIENT_CONTENT_PERCENTAGE = config(
-    "CONTENTFUL_LOCALE_SUFFICIENT_CONTENT_PERCENTAGE",
-    default="1" if DEV is True else "60",
-    parser=float,
-)
-
 RELEASE_NOTES_PATH = config("RELEASE_NOTES_PATH", default=data_path("release_notes"))
 RELEASE_NOTES_REPO = config("RELEASE_NOTES_REPO", default="https://github.com/mozilla/release-notes.git")
 RELEASE_NOTES_BRANCH = config("RELEASE_NOTES_BRANCH", default="master")
@@ -1067,7 +1070,10 @@ WEBVISION_DOCS_REPO = config("WEBVISION_DOCS_REPO", default="https://github.com/
 WEBVISION_DOCS_BRANCH = config("WEBVISION_DOCS_BRANCH", default="main")
 
 MOFO_SECURITY_ADVISORIES_PATH = config("MOFO_SECURITY_ADVISORIES_PATH", default=data_path("mofo_security_advisories"))
-MOFO_SECURITY_ADVISORIES_REPO = config("MOFO_SECURITY_ADVISORIES_REPO", default="https://github.com/mozilla/foundation-security-advisories.git")
+MOFO_SECURITY_ADVISORIES_REPO = config(
+    "MOFO_SECURITY_ADVISORIES_REPO",
+    default="https://github.com/mozilla/foundation-security-advisories.git",
+)
 MOFO_SECURITY_ADVISORIES_BRANCH = config("MOFO_SECURITY_ADVISORIES_BRANCH", default="master")
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -1115,6 +1121,9 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.PBKDF2PasswordHasher"]
 ADMINS = MANAGERS = config("ADMINS", parser=json.loads, default="[]")
 
 GTM_CONTAINER_ID = config("GTM_CONTAINER_ID", default="")
+
+# Transcend Consent Management - airgap.js script URL
+TRANSCEND_AIRGAP_URL = config("TRANSCEND_AIRGAP_URL", default="")
 
 GMAP_API_KEY = config("GMAP_API_KEY", default="")
 STUB_ATTRIBUTION_HMAC_KEY = config("STUB_ATTRIBUTION_HMAC_KEY", default="")
@@ -1190,7 +1199,10 @@ SENTRY_FRONTEND_DSN = config("SENTRY_FRONTEND_DSN", default=SENTRY_DSN)
 # Statsd metrics via markus
 if DEBUG or config("DISABLE_LOCAL_MARKUS", default="false", parser=bool):
     MARKUS_BACKENDS = [
-        {"class": "markus.backends.logging.LoggingMetrics", "options": {"logger_name": "metrics"}},
+        {
+            "class": "markus.backends.logging.LoggingMetrics",
+            "options": {"logger_name": "metrics"},
+        },
     ]
 else:
     STATSD_HOST = config("STATSD_HOST", default=get_default_gateway_linux())
@@ -1255,386 +1267,643 @@ DATA_CONSENT_COUNTRIES = [
 
 # URL for Mozilla VPN sign-in links
 # ***This URL *MUST* end in a traling slash!***
-VPN_ENDPOINT = config("VPN_ENDPOINT", default="https://stage.guardian.nonprod.cloudops.mozgcp.net/" if DEV else "https://vpn.mozilla.org/")
+VPN_ENDPOINT = config(
+    "VPN_ENDPOINT",
+    default=("https://stage.guardian.nonprod.cloudops.mozgcp.net/" if DEV else "https://vpn.mozilla.org/"),
+)
 
 # URL for Mozilla VPN subscription links
 # ***This URL *MUST* end in a traling slash!***
-VPN_SUBSCRIPTION_URL = config("VPN_SUBSCRIPTION_URL", default="https://accounts.stage.mozaws.net/" if DEV else "https://accounts.firefox.com/")
+VPN_SUBSCRIPTION_URL = config(
+    "VPN_SUBSCRIPTION_URL",
+    default=("https://accounts.stage.mozaws.net/" if DEV else "https://accounts.firefox.com/"),
+)
+
+# New URL for VPN subscription links
+# ***This URL *MUST* end in a trailing slash!***
+VPN_SUBSCRIPTION_URL_NEXT = config(
+    "VPN_SUBSCRIPTION_URL_NEXT",
+    default=("https://payments-next.allizom.org/" if DEV else "https://payments.firefox.com/"),
+)
+
+# For testing/QA we support a test 'daily' API endpoint on the staging API only
+VPN_SUBSCRIPTION_USE_DAILY_MODE__QA_ONLY = config("VPN_SUBSCRIPTION_USE_DAILY_MODE__QA_ONLY", default="False", parser=bool)
 
 # Product ID for VPN subscriptions
 VPN_PRODUCT_ID = config("VPN_PRODUCT_ID", default="prod_FiJ42WCzZNRSbS" if DEV else "prod_FvnsFHIfezy3ZI")
+VPN_PRODUCT_ID_NEXT = "mozillavpnstage" if DEV else "vpn"
 
 # VPN variable subscription plan IDs by currency/language.
 VPN_PLAN_ID_MATRIX = {
     "chf": {  # Swiss franc
         "de": {  # German
             "12-month": {
-                "id": "price_1J4sAUKb9q6OnNsLfYDKbpdY" if DEV else "price_1J5JssJNcmPzuWtR616BH4aU",
                 "price": "5.99",
                 "total": "71.88",
                 "currency": "CHF",
                 "saving": 45,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "CHF", "discount": "60.00", "price": "71.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "CHF",
+                    "discount": "60.00",
+                    "price": "71.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1J4sC2Kb9q6OnNsLIgz3DDu8" if DEV else "price_1J5Ju3JNcmPzuWtR3GpNYSWj",
                 "price": "10.99",
                 "total": None,
                 "currency": "CHF",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "CHF", "discount": "0", "price": "10.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "CHF",
+                    "discount": "0",
+                    "price": "10.99",
+                    "period": "monthly",
+                },
             },
         },
         "fr": {  # French
             "12-month": {
-                "id": "price_1J4sM2Kb9q6OnNsLsGLZwTP9" if DEV else "price_1J5JunJNcmPzuWtRo9dLxn6M",
                 "price": "5.99",
                 "total": "71.88",
                 "currency": "CHF",
                 "saving": 45,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "CHF", "discount": "60.00", "price": "71.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "CHF",
+                    "discount": "60.00",
+                    "price": "71.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1J4sNGKb9q6OnNsLl3OEuKqT" if DEV else "price_1J5JvjJNcmPzuWtR3wwy1dcR",
                 "price": "10.99",
                 "currency": "CHF",
                 "total": None,
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "CHF", "discount": "0", "price": "10.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "CHF",
+                    "discount": "0",
+                    "price": "10.99",
+                    "period": "monthly",
+                },
             },
         },
         "it": {  # Italian
             "12-month": {
-                "id": "price_1J4sWMKb9q6OnNsLkrTo2uUW" if DEV else "price_1J5JwWJNcmPzuWtRgrx5fjOc",
                 "price": "5.99",
                 "total": "71.88",
                 "currency": "CHF",
                 "saving": 45,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "CHF", "discount": "60.00", "price": "71.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "CHF",
+                    "discount": "60.00",
+                    "price": "71.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1J4sXWKb9q6OnNsLVoGiXcW5" if DEV else "price_1J5JxGJNcmPzuWtRrp5e1SUB",
                 "price": "10.99",
                 "total": None,
                 "currency": "CHF",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "CHF", "discount": "0", "price": "10.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "CHF",
+                    "discount": "0",
+                    "price": "10.99",
+                    "period": "monthly",
+                },
             },
         },
     },
     "czk": {  # Czech koruna
         "cs": {  # Czech
             "12-month": {
-                "id": "price_1N7ObPKb9q6OnNsLf9okHbUl" if DEV else "price_1N7PDwJNcmPzuWtR1IxSkZ0c",
                 "price": "119",
                 "total": "1428",
                 "currency": "CZK",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "CZK", "discount": "1416", "price": "1428", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "CZK",
+                    "discount": "1416",
+                    "price": "1428",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1N7Oc2Kb9q6OnNsLkYPFVHtx" if DEV else "price_1N7PESJNcmPzuWtRTgmv8Ve4",
                 "price": "237",
                 "total": None,
                 "currency": "CZK",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "CZK", "discount": "0", "price": "237", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "CZK",
+                    "discount": "0",
+                    "price": "237",
+                    "period": "monthly",
+                },
             },
         },
     },
     "dkk": {  # Danish krone
         "da": {  # Dansk
             "12-month": {
-                "id": "price_1N7Oa1Kb9q6OnNsLh9F1hDhi" if DEV else "price_1N7PCQJNcmPzuWtRNqtksScA",
                 "price": "37",
                 "total": "444",
                 "currency": "DKK",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "DKK", "discount": "456", "price": "444", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "DKK",
+                    "discount": "456",
+                    "price": "444",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1N7OapKb9q6OnNsLTvIbY6DY" if DEV else "price_1N7PCsJNcmPzuWtRXIMBFQbq",
                 "price": "75",
                 "total": None,
                 "currency": "DKK",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "DKK", "discount": "0", "price": "75", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "DKK",
+                    "discount": "0",
+                    "price": "75",
+                    "period": "monthly",
+                },
             },
         },
     },
     "euro": {  # Euro
         "bg": {  # Bulgarian
             "12-month": {
-                "id": "price_1N7OdmKb9q6OnNsLO0Rf6LUt" if DEV else "price_1N7PGEJNcmPzuWtRzTe85nzw",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1N7OeJKb9q6OnNsLvGDxhcaj" if DEV else "price_1N7PHRJNcmPzuWtRjZ8D8kwx",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
         "de": {  # German
             "12-month": {
-                "id": "price_1IXw5oKb9q6OnNsLPMkWOid7" if DEV else "price_1IgwblJNcmPzuWtRynC7dqQa",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1N9CInKb9q6OnNsLQYotCVpd" if DEV else "price_1IgwZVJNcmPzuWtRg9Wssh2y",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
         "el": {  # Greek
             "12-month": {
-                "id": "price_1N7Or1Kb9q6OnNsLhHrEcbwd" if DEV else "price_1N7PPyJNcmPzuWtRkUbirJmB",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1N7OrgKb9q6OnNsLk5xS9DYr" if DEV else "price_1N7PQIJNcmPzuWtR2BQdQbtL",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
         "en": {  # English
             "12-month": {
-                "id": "price_1JcuArKb9q6OnNsLXAnkCSUE" if DEV else "price_1JcdvBJNcmPzuWtROLbEH9d2",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1Jcu7uKb9q6OnNsLG4JAAXuw" if DEV else "price_1JcdsSJNcmPzuWtRGF9Y5TMJ",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
         "es": {  # Spanish
             "12-month": {
-                "id": "price_1J4pE7Kb9q6OnNsLnvvyRClI" if DEV else "price_1J5JCdJNcmPzuWtRrvQMFLlP",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1J4pFSKb9q6OnNsLEyiFLbvB" if DEV else "price_1J5JDgJNcmPzuWtRqQtIbktk",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
         "fr": {  # French
             "12-month": {
-                "id": "price_1N9CFcKb9q6OnNsL1r7W4EiX" if DEV else "price_1IgnlcJNcmPzuWtRjrNa39W4",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1N9CHBKb9q6OnNsLlYDTJ3px" if DEV else "price_1IgowHJNcmPzuWtRzD7SgAYb",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
         "hu": {  # Hungarian
             "12-month": {
-                "id": "price_1N7OcfKb9q6OnNsLuXLBVp8T" if DEV else "price_1N7PF1JNcmPzuWtRujxNI9yh",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1N7OdBKb9q6OnNsLJENr3u8W" if DEV else "price_1N7PFbJNcmPzuWtRlVNtHvgG",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
         "it": {  # Italian
             "12-month": {
-                "id": "price_1J4p3CKb9q6OnNsLK2oBxgsV" if DEV else "price_1J4owvJNcmPzuWtRomVhWQFq",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1J4p6wKb9q6OnNsLTb6kCDsC" if DEV else "price_1J5J6iJNcmPzuWtRK5zfoguV",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
         "nl": {  # Dutch
             "12-month": {
-                "id": "price_1J4ryxKb9q6OnNsL3fPF8mxI" if DEV else "price_1J5JRGJNcmPzuWtRXwXA84cm",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1J4s0MKb9q6OnNsLS19LMKBb" if DEV else "price_1J5JSkJNcmPzuWtR54LPH2zi",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
         "pt": {  # Portuguese
             "12-month": {
-                "id": "price_1N7OSoKb9q6OnNsLdJDSaCBW" if DEV else "price_1N7PBOJNcmPzuWtRykt8Uyzm",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1N7OUEKb9q6OnNsLXlaW6Ovc" if DEV else "price_1N7PBsJNcmPzuWtRzS5kTc5B",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
         "ro": {  # Romanian
             "12-month": {
-                "id": "price_1N7ORMKb9q6OnNsLVMHfYXQq" if DEV else "price_1N7PADJNcmPzuWtRxHjlrDiy",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1N7OS5Kb9q6OnNsLA2BVYqTG" if DEV else "price_1N7PAmJNcmPzuWtR1zOoPIao",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
         "sk": {  # Slovak
             "12-month": {
-                "id": "price_1N7OjyKb9q6OnNsLRnctp7yW" if DEV else "price_1N7PKUJNcmPzuWtRrnyAM0wd",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1N7OkVKb9q6OnNsL5Vzz6X9D" if DEV else "price_1N7PKyJNcmPzuWtROTKgdgW0",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
         "sl": {  # Slovenian
             "12-month": {
-                "id": "price_1N7OmEKb9q6OnNsLI2fRSJX3" if DEV else "price_1N7PMcJNcmPzuWtR8TWsjoHe",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "EUR",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1N7OmiKb9q6OnNsLvXqreUUk" if DEV else "price_1N7PN6JNcmPzuWtRpN8HAr7L",
                 "price": "9.99",
                 "total": None,
                 "currency": "EUR",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "EUR", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "EUR",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         },
     },
     "pln": {  # Polish złoty
         "en": {  # English
             "12-month": {
-                "id": "price_1N7OOaKb9q6OnNsLSUzW83h9" if DEV else "price_1N7P8TJNcmPzuWtRI7pI29bO",
                 "price": "22",
                 "total": "264",
                 "currency": "PLN",
                 "saving": 48,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "PLN", "discount": "276", "price": "264", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "PLN",
+                    "discount": "276",
+                    "price": "264",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1N7OQWKb9q6OnNsLMLHUFggO" if DEV else "price_1N7P98JNcmPzuWtRbUaI24OH",
                 "price": "45",
                 "total": None,
                 "currency": "PLN",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "PLN", "discount": "0", "price": "45", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "PLN",
+                    "discount": "0",
+                    "price": "45",
+                    "period": "monthly",
+                },
             },
         },
     },
     "usd": {  # US dollar
         "en": {  # English
             "12-month": {
-                "id": "price_1J0Y1iKb9q6OnNsLXwdOFgDr" if DEV else "price_1Iw85dJNcmPzuWtRyhMDdtM7",
                 "price": "4.99",
                 "total": "59.88",
                 "currency": "USD",
                 "saving": 50,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "USD", "discount": "60.00", "price": "59.88", "period": "yearly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "USD",
+                    "discount": "60.00",
+                    "price": "59.88",
+                    "period": "yearly",
+                },
             },
             "monthly": {
-                "id": "price_1J0owvKb9q6OnNsLExNhEDXm" if DEV else "price_1Iw7qSJNcmPzuWtRMUZpOwLm",
                 "price": "9.99",
                 "total": None,
                 "currency": "USD",
                 "saving": None,
-                "analytics": {"brand": "vpn", "plan": "vpn", "currency": "USD", "discount": "0", "price": "9.99", "period": "monthly"},
+                "analytics": {
+                    "brand": "vpn",
+                    "plan": "vpn",
+                    "currency": "USD",
+                    "discount": "0",
+                    "price": "9.99",
+                    "period": "monthly",
+                },
             },
         }
     },
@@ -1736,6 +2005,286 @@ VPN_VARIABLE_PRICING = {
     },
 }
 
+# Simplified pricing matrix for countries that can
+# only purchase a subscription through the app store.
+VPN_MOBILE_SUB_PRICING = {
+    "AU": {  # Australia
+        "12-month": {
+            "price": "7.5",
+            "total": "89.99",
+            "currency": "AUD",
+        },
+        "monthly": {
+            "price": "14.99",
+            "currency": "AUD",
+        },
+    },
+    "BD": {  # Bangladesh
+        "12-month": {
+            "price": "583.33",
+            "total": "7000",
+            "currency": "BDT",
+        },
+        "monthly": {
+            "price": "1200",
+            "currency": "BDT",
+        },
+    },
+    "BR": {  # Brazil
+        "12-month": {
+            "price": "27.50",
+            "total": "330",
+            "currency": "BRL",
+        },
+        "monthly": {
+            "price": "56",
+            "currency": "BRL",
+        },
+    },
+    "CL": {  # Chile
+        "12-month": {
+            "price": "4582.50",
+            "total": "54990",
+            "currency": "CLP",
+        },
+        "monthly": {
+            "price": "9300",
+            "currency": "CLP",
+        },
+    },
+    "CO": {  # Colombia
+        "12-month": {
+            "price": "20825",
+            "total": "249900",
+            "currency": "COP",
+        },
+        "monthly": {
+            "price": "41900",
+            "currency": "COP",
+        },
+    },
+    "EG": {  # Egypt
+        "12-month": {
+            "price": "241.67",
+            "total": "2899.99",
+            "currency": "EGP",
+        },
+        "monthly": {
+            "price": "479.99",
+            "currency": "EGP",
+        },
+    },
+    "GR": {  # Greece
+        "12-month": {
+            "price": "4.99",
+            "total": "59.88",
+            "currency": "EUR",
+        },
+        "monthly": {
+            "price": "9.99",
+            "currency": "EUR",
+        },
+    },
+    "ID": {  # Indonesia
+        "12-month": {
+            "price": "75000",
+            "total": "900000",
+            "currency": "IDR",
+        },
+        "monthly": {
+            "price": "155000",
+            "currency": "IDR",
+        },
+    },
+    "IN": {  # India
+        "12-month": {
+            "price": "416.58",
+            "total": "4999",
+            "currency": "INR",
+        },
+        "monthly": {
+            "price": "839",
+            "currency": "INR",
+        },
+    },
+    "KE": {  # Kenya
+        "12-month": {
+            "price": "5.00",
+            "total": "59.99",
+            "currency": "USD",
+        },
+        "monthly": {
+            "price": "9.99",
+            "currency": "USD",
+        },
+    },
+    "KR": {  # South Korea
+        "12-month": {
+            "price": "6658.33",
+            "total": "79900",
+            "currency": "KRW",
+        },
+        "monthly": {
+            "price": "13500",
+            "currency": "KRW",
+        },
+    },
+    "MA": {  # Morocco
+        "12-month": {
+            "price": "50",
+            "total": "600",
+            "currency": "MAD",
+        },
+        "monthly": {
+            "price": "99",
+            "currency": "MAD",
+        },
+    },
+    "MX": {  # Mexico
+        "12-month": {
+            "price": "95.75",
+            "total": "1149",
+            "currency": "MXN",
+        },
+        "monthly": {
+            "price": "189",
+            "currency": "MXN",
+        },
+    },
+    "NG": {  # Nigeria
+        "12-month": {
+            "price": "8325",
+            "total": "99900",
+            "currency": "NGN",
+        },
+        "monthly": {
+            "price": "15900",
+            "currency": "NGN",
+        },
+    },
+    "NO": {  # Norway
+        "12-month": {
+            "price": "54.17",
+            "total": "650",
+            "currency": "NOK",
+        },
+        "monthly": {
+            "price": "110",
+            "currency": "NOK",
+        },
+    },
+    "SA": {  # Saudi Arabia
+        "12-month": {
+            "price": "18.75",
+            "total": "224.99",
+            "currency": "SAR",
+        },
+        "monthly": {
+            "price": "36.99",
+            "currency": "SAR",
+        },
+    },
+    "SN": {  # Senegal
+        "12-month": {
+            "price": "4.99",
+            "total": "59.88",
+            "currency": "USD",
+        },
+        "monthly": {
+            "price": "9.99",
+            "currency": "USD",
+        },
+    },
+    "TH": {  # Thailand
+        "12-month": {
+            "price": "165.83",
+            "total": "1990",
+            "currency": "THB",
+        },
+        "monthly": {
+            "price": "330",
+            "currency": "THB",
+        },
+    },
+    "TR": {  # Turkey
+        "12-month": {
+            "price": "166.67",
+            "total": "1999.99",
+            "currency": "TRY",
+        },
+        "monthly": {
+            "price": "339.99",
+            "currency": "TRY",
+        },
+    },
+    "TW": {  # Taiwan
+        "12-month": {
+            "price": "158.33",
+            "total": "1900",
+            "currency": "TWD",
+        },
+        "monthly": {
+            "price": "320",
+            "currency": "TWD",
+        },
+    },
+    "UA": {  # Ukraine
+        "12-month": {
+            "price": "5.00",
+            "total": "59.99",
+            "currency": "USD",
+        },
+        "monthly": {
+            "price": "9.99",
+            "currency": "USD",
+        },
+    },
+    "UG": {  # Uganda
+        "12-month": {
+            "price": "4.99",
+            "total": "59.88",
+            "currency": "USD",
+        },
+        "monthly": {
+            "price": "9.99",
+            "currency": "USD",
+        },
+    },
+    "US": {  # United States (only used as a fallback should a country match not be found).
+        "12-month": {
+            "price": "4.99",
+            "total": "59.88",
+            "currency": "USD",
+        },
+        "monthly": {
+            "price": "9.99",
+            "currency": "USD",
+        },
+    },
+    "VN": {  # Vietnam
+        "12-month": {
+            "price": "124917",
+            "total": "1499000",
+            "currency": "VND",
+        },
+        "monthly": {
+            "price": "249000",
+            "currency": "VND",
+        },
+    },
+    "ZA": {  # South Africa
+        "12-month": {
+            "price": "83.33",
+            "total": "999.99",
+            "currency": "ZAR",
+        },
+        "monthly": {
+            "price": "169.99",
+            "currency": "ZAR",
+        },
+    },
+}
+
 # Mozilla VPN Geo restrictions
 # https://github.com/mozilla-services/guardian-website/blob/master/server/constants.ts
 
@@ -1824,9 +2373,7 @@ VPN_MOBILE_SUB_ANDROID_ONLY_COUNTRY_CODES = [
     "SN",  # Senegal
 ]
 
-VPN_AFFILIATE_COUNTRIES = ["CA", "DE", "FR", "GB", "IE", "US"]
-VPN_AVAILABLE_COUNTRIES = 33
-VPN_AVAILABLE_COUNTRIES_WAVE_VII = 57
+VPN_AVAILABLE_COUNTRIES = 57
 VPN_CONNECT_SERVERS = 500
 VPN_CONNECT_COUNTRIES = 30
 VPN_CONNECT_DEVICES = 5
@@ -1903,9 +2450,9 @@ VPN_SUPPORTED_LOCALES = [
 # RELAY =========================================================================================
 
 RELAY_PRODUCT_URL = config(
-    "RELAY_PRODUCT_URL", default="https://stage.fxprivaterelay.nonprod.cloudops.mozgcp.net/" if DEV else "https://relay.firefox.com/"
+    "RELAY_PRODUCT_URL",
+    default=("https://stage.fxprivaterelay.nonprod.cloudops.mozgcp.net/" if DEV else "https://relay.firefox.com/"),
 )
-
 
 # Authentication with Mozilla OpenID Connect / Auth0 ============================================
 
@@ -1991,6 +2538,8 @@ if WAGTAIL_ENABLE_ADMIN:
         # django.contrib.admin needs SessionMiddleware and AuthenticationMiddleware to be specced, and fails
         # hard if it's in INSTALLED_APPS when they are not, so we have to defer adding it till here
         "django.contrib.admin",
+        # wagtail_localize_smartling > 0.10 needs django.contrib.humanize
+        "django.contrib.humanize",
     ]
 
     for midddleware_spec in [
@@ -2008,6 +2557,7 @@ if WAGTAIL_ENABLE_ADMIN:
             "django-rq",
             "oidc",
             "_internal_draft_preview",
+            "intentional-blanks",  # wagtail-localize-intentional-blanks
         ]
     )
 
@@ -2015,7 +2565,7 @@ if WAGTAIL_ENABLE_ADMIN:
     # but only for deployments where the CMS is enabled. This is needed to support
     # complex pages with lots of (small, but) nested fields.
     # Resolves https://mozilla.sentry.io/issues/5800147294
-    DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
+    DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
 
 
 def lazy_wagtail_langs():
@@ -2036,6 +2586,8 @@ def lazy_wagtail_langs():
         ("ru", "Russian"),
         ("zh-CN", "Chinese (China-Simplified)"),
     ]
+    if DEV:
+        enabled_wagtail_langs.append(("ar", "Arabic"))  # To test the RTL support in the CMS
     enabled_language_codes = [x[0] for x in LANGUAGES]
     retval = [wagtail_lang for wagtail_lang in enabled_wagtail_langs if wagtail_lang[0] in enabled_language_codes]
     return retval
@@ -2045,7 +2597,7 @@ WAGTAIL_I18N_ENABLED = True
 WAGTAIL_CONTENT_LANGUAGES = lazy(lazy_wagtail_langs, list)()
 
 # Don't automatically make a page for a non-default locale availble in the default locale
-WAGTAILLOCALIZE_SYNC_LIVE_STATUS_ON_TRANSLATE = False
+WAGTAILLOCALIZE_SYNC_LIVE_STATUS_ON_TRANSLATE = False  # note that WAGTAILLOCALIZE is correct without the _
 
 # Settings for https://github.com/mozilla/wagtail-localize-smartling
 WAGTAIL_LOCALIZE_SMARTLING = {
@@ -2078,13 +2630,22 @@ WAGTAIL_LOCALIZE_SMARTLING = {
         "pl": "pl-PL",
         "ru": "ru-RU",
     },
+    "JOB_NAME_PREFIX": config(
+        "WAGTAIL_LOCALIZE_JOB_NAME_PREFIX",
+        default="www.mozilla.org",
+    ),
     "REFORMAT_LANGUAGE_CODES": False,  # don't force language codes into Django's all-lowercase pattern
+    "VISUAL_CONTEXT_CALLBACK": "bedrock.cms.wagtail_localize_smartling.callbacks.visual_context",
 }
 
-WAGTAIL_DRAFTSHARING_ADMIN_MENU_POSITION = 9000
-# WAGTAIL_DRAFTSHARING_VERBOSE_NAME = "Internal Share"
-# WAGTAIL_DRAFTSHARING_VERBOSE_NAME_PLURAL = "Internal Shares"
-# WAGTAIL_DRAFTSHARING_MENU_ITEM_LABEL = "Create internal sharing link"
+WAGTAILDRAFTSHARING = {
+    "ADMIN_MENU_POSITION": 9000,
+    # MAX_TTL: 14 * 24 * 60 * 60
+    # VERBOSE_NAME: "Internal Share"
+    # VERBOSE_NAME_PLURAL: "Internal Shares"
+    # MENU_ITEM_LABEL: "Create internal sharing link"
+}
+
 
 # Custom settings, not a core Wagtail ones, to scope out RichText options
 WAGTAIL_RICHTEXT_FEATURES_FULL = [
@@ -2095,13 +2656,23 @@ WAGTAIL_RICHTEXT_FEATURES_FULL = [
     "hr",
     "bold",
     "italic",
-    "strikethrough",
     "code",
     "blockquote",
+    "superscript",
     "link",
     "ol",
     "ul",
     "image",
+]
+
+WAGTAIL_RICHTEXT_FEATURES_MINIMAL = [
+    # https://docs.wagtail.org/en/stable/advanced_topics/customisation/page_editing_interface.html#limiting-features-in-a-rich-text-field
+    # Order here is the order used in the editor UI
+    "bold",
+    "italic",
+    "link",
+    "ol",
+    "ul",
 ]
 
 WAGTAILIMAGES_IMAGE_MODEL = "cms.BedrockImage"
@@ -2125,11 +2696,30 @@ WAGTAILIMAGES_EXTENSIONS = [
 #
 # NB: EVERY TIME you add a new Wagtail Page subclass to the CMS, you must enable
 # it here if you want it to be selectable as a new child page in Production
+#
+# You must ALSO consider if they need to be added to the DB export script. If
+# they are not, they will not be fully exported to the sqlite DB, which
+# may break things like demos and integration tests. See bin/export-db-to-sqlite.sh
 
 _allowed_page_models = [
     "cms.SimpleRichTextPage",
     "cms.StructuralPage",
+    "mozorg.AdvertisingIndexPage",
+    "mozorg.AdvertisingTwoColumnSubpage",
+    "mozorg.ContentSubpage",
+    "anonym.AnonymIndexPage",
+    "anonym.AnonymContentSubPage",
+    "anonym.AnonymNewsPage",
+    "anonym.AnonymNewsItemPage",
+    "anonym.AnonymCaseStudyItemPage",
+    "anonym.AnonymCaseStudyPage",
+    "anonym.AnonymContactPage",
+    "mozorg.HomePage",
     "mozorg.LeadershipPage",
+    "products.VPNResourceCenterDetailPage",
+    "products.VPNResourceCenterIndexPage",
+    "products.MonitorArticleIndexPage",
+    "products.MonitorArticlePage",
     "products.VPNResourceCenterDetailPage",
     "products.VPNResourceCenterIndexPage",
 ]
@@ -2144,3 +2734,23 @@ else:
 # doesn't exist, we get `None` back from `switch_is_active`.
 WAFFLE_SWITCH_DEFAULT = None
 WAFFLE_CREATE_MISSING_SWITCHES = False
+
+if config("ENABLE_WAGTAIL_STYLEGUIDE", parser=bool, default="False"):
+    # Useful when customising the Wagtail admin
+    # when enabled, will be visible on cms-admin/styleguide
+    INSTALLED_APPS.append("wagtail.contrib.styleguide")
+
+# Django-silk for performance profiling
+if ENABLE_DJANGO_SILK := config("ENABLE_DJANGO_SILK", default="False", parser=bool):
+    print("Django-Silk profiling enabled - go to http://localhost:8000/silk/ to view metrics")
+    INSTALLED_APPS.append("silk")
+    MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
+    SUPPORTED_NONLOCALES.append("silk")
+    SILKY_PYTHON_PROFILER = config("SILKY_PYTHON_PROFILER", default="False", parser=bool)
+
+# Config for redirection of certain pages over to www.firefox.com - if you override this,
+# be sure NOT to include `locale` - we add that in the redirects as and when needed
+# NOTE THE LACK OF TRAILING SLASH, too - this is deliberate and should be followed,
+# but if you use it without a path you must add a trailing slash to avoid a 302 at
+# the firefox.com end, because Django will append a trailing slash if it doesn't exist.
+FXC_BASE_URL = config("FXC_BASE_URL", default="https://www.firefox.com")

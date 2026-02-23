@@ -4,19 +4,25 @@
 
 import datetime
 import logging
+import re
 import urllib.parse
 
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.urls import NoReverseMatch
 from django.utils.encoding import smart_str
+from django.utils.safestring import mark_safe
+from django.utils.text import slugify
 
 import jinja2
+from bs4 import BeautifulSoup
 from django_jinja import library
 from markupsafe import Markup
+from wagtail.rich_text import RichText
 
 from bedrock.base import waffle
 from bedrock.utils import expand_locale_groups
+from lib.l10n_utils import get_translations_native_names
 
 from ..urlresolvers import reverse
 
@@ -153,3 +159,63 @@ def alternate_url(path, locale):
         return alt_paths[path][locale]
 
     return None
+
+
+@library.global_function
+def get_locale_options(request, translations):
+    # For purely Django-rendered pages, or purely CMS-backed pages, we can just
+    # rely on the `translations` var in the render context to know what locales
+    # are viable for the page being rendered. Great! \o/
+    available_locales = translations
+
+    # However, if a URL route is decorated with bedrock.cms.decorators.prefer_cms
+    # that means that a page could come from the CMS or from Django depending on
+    # the locale being requested. In this situation _locales_available_via_cms
+    # and _locales_for_django_fallback_view are annotated onto the request.
+    # We need to use these to create a more accurate view of what locales are
+    # available. Also note that being decorated with prefer_cms doesn't guarantee
+    # that the annotated lists of locales contain any values, so we must also count
+    # them to be sure they are viable lists.
+
+    cms_locale_count = len(getattr(request, "_locales_available_via_cms", []))
+    django_fallback_locale_count = len(getattr(request, "_locales_for_django_fallback_view", []))
+
+    if cms_locale_count > 0 and django_fallback_locale_count > 0:
+        available_locales = get_translations_native_names(sorted(set(request._locales_available_via_cms + request._locales_for_django_fallback_view)))
+
+    return available_locales
+
+
+@library.filter
+def add_bedrock_attributes(html):
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Add id to headings
+    headings = soup.find_all(re.compile("h[1-6]{1}"))
+    for heading in headings:
+        heading["id"] = slugify(heading.text)
+
+    # Add protocol list class to ul and ol lists
+    lists = soup.find_all(["ul", "ol"])
+    for list in lists:
+        list["class"] = list.get("class", []) + ["mzp-u-list-styled"]
+
+    # Add rel and target to external links
+    external_links = soup.find_all("a", {"href": True})
+    for link in external_links:
+        if link["href"].startswith("http"):
+            link["rel"] = "external noopener"
+            link["target"] = "_blank"
+
+    return str(soup)
+
+
+@library.filter
+def remove_p_tag(value: str) -> str:
+    rich_text = RichText(value)
+    html_content = str(rich_text.source)
+    soup = BeautifulSoup(html_content, "html.parser")
+    content = ""
+    if soup and soup.p:
+        content = "<br/>".join("".join(str(c) for c in tag.contents) for tag in soup.find_all("p"))
+    return mark_safe(content)

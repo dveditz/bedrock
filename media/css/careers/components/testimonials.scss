@@ -5,10 +5,8 @@
 @use '../utils' as cp;
 @use 'sass:color';
 
-$image-path: '/media/protocol/img';
-
-@import '~@mozilla-protocol/core/protocol/css/includes/lib';
-@import '~@mozilla-protocol/core/protocol/css/components/modal';
+@use '~@mozilla-protocol/core/protocol/css/includes/lib' as *;
+@use '~@mozilla-protocol/core/protocol/css/components/modal';
 
 .c-careers-testimonials {
     // Hide pull quotes section if JS is disabled
@@ -98,19 +96,19 @@ $image-path: '/media/protocol/img';
                     @include text-title-md;
                     content: '“';
                     position: absolute;
-                    top: -15px;
+                    top: -10px;
                     left: -20px;
                     color: $color-black;
-                    font-weight: bold;
+                    font-weight: normal;
                 }
 
                 &::after {
                     @include text-title-md;
                     content: '”';
                     position: absolute;
-                    bottom: 0;
+                    bottom: -5px;
                     color: $color-black;
-                    font-weight: bold;
+                    font-weight: normal;
                 }
             }
 
@@ -130,6 +128,10 @@ $image-path: '/media/protocol/img';
             .c-careers-testimonial-item {
                 q {
                     @include font-size(26px);
+
+                    &::after {
+                        bottom: -15px;
+                    }
                 }
 
                 &:last-child {
@@ -160,7 +162,7 @@ $image-path: '/media/protocol/img';
                 }
 
                 @media #{$mq-high-res} {
-                    &.perla {
+                    &.one {
                         background-image: url('/media/img/careers/testimonials/perla-high-res.jpg');
                     }
 
@@ -225,7 +227,6 @@ $image-path: '/media/protocol/img';
                         top: -15px;
                         left: -20px;
                         color: $color-dark-gray-20;
-                        font-weight: bold;
                     }
                 }
 
@@ -236,7 +237,6 @@ $image-path: '/media/protocol/img';
                         position: absolute;
                         bottom: -15px;
                         color: $color-dark-gray-20;
-                        font-weight: bold;
                     }
                 }
             }
@@ -274,10 +274,6 @@ $image-path: '/media/protocol/img';
     .mzp-c-modal-close {
         background: $color-black;
         border-radius: 100%;
-
-        button {
-            cursor: pointer;
-        }
     }
 
     .c-modal-next {

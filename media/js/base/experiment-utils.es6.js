@@ -8,7 +8,6 @@ import { gpcEnabled, dntEnabled } from './consent/utils.es6';
 
 const knownExcludedParams = [
     'automation=true', // Automated functional tests
-    'cjevent=', // CJ Affiliate marketing referral links
     'entrypoint_experiment=', // Mozilla accounts experiments
     'entrypoint_variation=',
     'experiment=', // Stub attribution experiments
@@ -22,11 +21,18 @@ const knownExcludedParams = [
  * Check given URL against a list of well-know experimental query parameters.
  * Issue #10559
  * @param {String} params - query params, defaults to window.location.search.
+ * @param {String} ua - user agent, defaults to navigator.userAgent.
  * @returns {Boolean} - return false if match is found or if GPC / DNT are enabled.
  */
-function isApprovedToRun(params) {
+function isApprovedToRun(params, ua) {
     let queryString =
         typeof params === 'string' ? params : window.location.search || null;
+    const userAgent = typeof ua === 'string' ? ua : navigator.userAgent || null;
+
+    // Exclude Googlebot from experiment redirects issue #15773.
+    if (userAgent && userAgent.indexOf('Googlebot') !== -1) {
+        return false;
+    }
 
     if (gpcEnabled()) {
         return false;

@@ -159,12 +159,29 @@ python manage.py dumpdata \
     cms.SimpleRichTextPage \
     cms.BedrockImage \
     legal_docs.LegalDoc \
+    anonym.AnonymIndexPage \
+    anonym.AnonymContentSubPage \
+    anonym.AnonymNewsPage \
+    anonym.AnonymNewsItemPage \
+    anonym.AnonymCaseStudyItemPage \
+    anonym.AnonymCaseStudyPage \
+    anonym.AnonymContactPage \
+    anonym.Person \
     mozorg.WebvisionDoc \
     mozorg.LeadershipPage \
+    mozorg.AdvertisingIndexPage \
+    mozorg.AdvertisingTwoColumnSubpage \
+    mozorg.ContentSubpage \
+    mozorg.HomePage \
+    mozorg.ContactBannerSnippet \
+    mozorg.NotificationSnippet \
     newsletter.Newsletter \
     products.VPNCallToActionSnippet \
     products.VPNResourceCenterIndexPage \
     products.VPNResourceCenterDetailPage \
+    products.MonitorCallToActionSnippet \
+    products.MonitorArticleIndexPage \
+    products.MonitorArticlePage \
     externalfiles.ExternalFile \
     security.Product \
     security.SecurityAdvisory \
@@ -172,7 +189,6 @@ python manage.py dumpdata \
     security.MitreCVE \
     releasenotes.ProductRelease \
     contentcards.ContentCard \
-    contentful.ContentfulEntry \
     utils.GitRepoState \
     wordpress.BlogPost \
     sitemaps.SitemapURL \

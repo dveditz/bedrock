@@ -10,6 +10,12 @@
         color: $color-white;
     }
 
+    .wnp-content-main {
+        h1, h2, h3, h4 {
+            color: $color-white;
+        }
+    }
+
     .c-page-header-logo-fx {
         background: url('/media/img/logos/firefox/logo-word-hor-white.svg') no-repeat;
         @include background-size(120px, 40px);
@@ -23,7 +29,8 @@
         @include white-links;
     }
 
-    .wnp-sign-off {
+    .wnp-sign-off,
+    .wnp-sign-off-note {
         color: $color-white;
     }
 }

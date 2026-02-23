@@ -1,0 +1,243 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+@use 'vars/lib' as *;
+
+.m24-c-flag {
+    @include container;
+    padding-top: $spacer-xl;
+    padding-bottom: $spacer-xl;
+}
+
+.m24-c-flag-title {
+    font-size: $text-title-2xl;
+    line-height: 1;
+    margin: 0 0 16px;
+}
+
+.m24-c-flag-subtitle {
+    font-size: $text-title-md;
+    text-wrap: balance;
+    text-wrap-style: balance;
+    margin-bottom: $spacer-xl;
+}
+
+.m24-c-flag-cta {
+    margin-bottom: 0;
+}
+
+.m24-c-flag-media {
+    svg {
+        width: 100px;
+        height: auto;
+        fill: $m24-color-green; // zilla green
+    }
+}
+
+.m24-c-flag-button {
+    $font-size: 0.75;
+    background-color: $m24-color-alt-white;
+    border: 1px solid $m24-color-light-gray;
+    box-shadow: none;
+    color: $m24-color-black;
+    font-family: var(--body-font-family);
+    font-size: calc(#{$font-size} * 1rem);
+    font-weight: 600;
+    line-height: $font-size;
+    padding: 8px;
+    cursor: pointer;
+    transition: background-color $fast, border-color $fast;
+
+    // Keyboard focused button is always visible: https://bugzilla.mozilla.org/show_bug.cgi?id=1936862
+    &:focus-visible {
+        position: relative;
+        z-index: 1001; // must be above .m24-navigation-refresh.m24-mzp-is-sticky
+    }
+
+    &:hover,
+    &:focus-visible {
+        background-color: $m24-color-black; // inverts to white in dark theme section
+        border-color: $m24-color-black;
+        color: $m24-color-white; // inverts to white in dark theme section
+    }
+
+    &:active {
+        background-color: $m24-color-dark-mid-gray;
+        border-color: $m24-color-dark-mid-gray;
+        color: $m24-color-white;
+    }
+
+    // High Contrast Mode Support: https://bugzilla.mozilla.org/show_bug.cgi?id=1936865
+    @media (forced-colors) {
+        background-color: ButtonFace;
+        color: ButtonText;
+        border-color: transparent;
+
+        &:focus {
+            outline-color: CanvasText;
+        }
+    }
+}
+
+.m24-c-flag-button-pause,
+.m24-c-flag-button-play {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+}
+
+.m24-c-flag-button-text {
+    position: relative;
+    top: 0.0175rem; // flex alignment isn't totally centered, so we're manually adjusting
+}
+
+@media screen and (max-width: #{$screen-lg - 1}) {
+    .m24-c-flag-cta {
+        margin-bottom: $spacer-xl;
+    }
+
+    .m24-c-flag-button {
+        display: block;
+        margin-bottom: $spacer-md;
+        margin-inline-start: auto;
+    }
+
+    .m24-c-flag-media {
+        width: fit-content;
+        margin-inline-start: auto;
+    }
+}
+
+@media #{$mq-lg} {
+    .m24-c-flag {
+        @include grid;
+        grid-template-rows: [button-row-start] auto [button-row-end] auto;
+        padding-bottom: $spacer-2xl;
+    }
+
+    .m24-c-flag-button {
+        grid-column: 1 / -1;
+        grid-row: button-row;
+        justify-self: end;
+    }
+
+    .m24-c-flag-subtitle {
+        font-size: 24px;
+    }
+
+    .m24-c-flag-media {
+        grid-column: 10/12;
+        grid-row-start: button-row-end;
+        display: flex;
+        place-content: center center;
+        margin-bottom: 0;
+
+        svg {
+            width: 100%;
+            max-width: 216px;
+        }
+    }
+
+    .m24-c-flag-text {
+        grid-column: 2/9;
+        grid-row-start: button-row-end;
+    }
+
+    .m24-c-flag-cta {
+        .m24-c-cta.m24-t-sm {
+            font-size: $text-title-md;
+        }
+    }
+}
+
+@media #{$mq-max} {
+    .m24-c-flag-text {
+        grid-column: 1/9;
+    }
+}
+
+// temporary until transition can be refactored
+.m24-c-products {
+    background-color: $m24-color-white;
+}
+
+// static fallback
+.m24-c-flag-media-static {
+    display: none;
+}
+
+// When no JS or M24_HERO_ANIMATION switch is off
+// - hide animation SVG and button
+// - show static SVG
+.no-js,
+[data-m24-hero-animation="false"] {
+    .m24-c-flag-button {
+        visibility: hidden; // reserve space
+    }
+
+    .m24-c-flag-media-animation {
+        display: none;
+    }
+
+    .m24-c-flag-media-static {
+        display: block;
+    }
+}
+
+/*
+Note from Inclusive Components, "Changing labels": https://inclusive-components.design/toggle-button/
+As a rule of thumb, you should never change pressed state and label together.
+If the label changes, the button has already changed state in a sense,
+just not via explicit WAI-ARIA state management.
+*/
+[data-animation-running="false"] {
+    .m24-c-flag-button-pause {
+        display: none;
+    }
+
+    // only show the static path
+    .m24-c-flag-media-animation-paused{
+        opacity: 1;
+    }
+
+    // reset animation
+    .m24-c-flag-media-animation-frame {
+        animation: none;
+    }
+}
+
+[data-animation-running="true"] {
+    .m24-c-flag-button-play {
+        display: none;
+    }
+
+    // don't show the static path
+    .m24-c-flag-media-animation-paused {
+        opacity: 0;
+    }
+}
+
+.m24-c-flag-media-animation-frame {
+  --base-delay: 0.1s;
+  animation: 1.2s linear infinite wave;
+  opacity: 0;
+}
+
+
+// stagger frame visibility
+@for $i from 1 through 12 {
+    .m24-c-flag-media-animation svg:nth-of-type(#{$i}) {
+        animation-delay: calc(var(--base-delay) * #{$i - 1});
+    }
+}
+
+@keyframes wave {
+  0%, 8.333% {
+    opacity: 1;
+  }
+
+  8.4%, 100% {
+    opacity: 0;
+  }
+}

@@ -9,16 +9,12 @@ from django.core.mail import EmailMessage
 from django.http import Http404
 from django.shortcuts import render as django_render
 from django.template.loader import render_to_string
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_safe
 from django.views.generic import TemplateView
 
 from jsonview.decorators import json_view
 from product_details import product_details
 
-from bedrock.base.waffle import switch
-from bedrock.contentful.api import ContentfulPage
 from bedrock.mozorg.credits import CreditsFile
 from bedrock.mozorg.forms import MiecoEmailForm
 from bedrock.mozorg.models import WebvisionDoc
@@ -129,17 +125,31 @@ class HomeView(L10nTemplateView):
     m24_template_name = "mozorg/home/home-m24.html"
     template_name = "mozorg/home/home-new.html"
     old_template_name = "mozorg/home/home-old.html"
-    template_context_variations = ["1", "2", "3"]
-    activation_files = ["mozorg/home-new", "mozorg/home"]
+    activation_files = ["mozorg/home-m24", "mozorg/home-new", "mozorg/home"]
 
-    ftl_files_map = {old_template_name: ["mozorg/home"], template_name: ["mozorg/home-new"]}
+    ftl_files_map = {old_template_name: ["mozorg/home"], template_name: ["mozorg/home-new"], m24_template_name: ["mozorg/home-m24"]}
+
+    # place expected ?v= values in this list
+    variations = ["a", "b", "c"]
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update({"is_homepage": True})
+        variant = self.request.GET.get("v", None)
+
+        # ensure variant matches pre-defined value
+        if variant not in self.variations:
+            variant = None
+
+        ctx["variant"] = variant
+        return ctx
 
     def get_template_names(self):
         experience = self.request.GET.get("xv", None)
 
-        if switch("m24-website-refresh") and self.request.locale.startswith("en") and experience != "legacy":
+        if ftl_file_is_active("mozorg/home-m24") and experience not in ["quantum", "trailhead"]:
             return [self.m24_template_name]
-        elif ftl_file_is_active("mozorg/home-new") and experience != "legacy":
+        elif ftl_file_is_active("mozorg/home-new") and experience != "quantum":
             return [self.template_name]
 
         return [self.old_template_name]
@@ -148,37 +158,15 @@ class HomeView(L10nTemplateView):
 class AboutView(L10nTemplateView):
     m24_template_name = "mozorg/about/index-m24.html"
     template_name = "mozorg/about/index.html"
-    activation_files = ["mozorg/about"]
+    activation_files = ["mozorg/about", "mozorg/about-m24"]
 
-    ftl_files_map = {template_name: ["mozorg/about"]}
+    ftl_files_map = {template_name: ["mozorg/about"], m24_template_name: ["mozorg/about-m24"]}
 
     def get_template_names(self):
-        if switch("m24-website-refresh") and self.request.locale.startswith("en"):
+        if ftl_file_is_active("mozorg/about-m24"):
             return [self.m24_template_name]
 
         return [self.template_name]
-
-
-@method_decorator(never_cache, name="dispatch")
-class ContentfulPreviewView(L10nTemplateView):
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        content_id = ctx["content_id"]
-        page = ContentfulPage(self.request, content_id)
-        ctx.update(page.get_content())
-        return ctx
-
-    def render_to_response(self, context, **response_kwargs):
-        page_type = context["page_type"]
-        theme = context["info"]["theme"]
-        if page_type == "pagePageResourceCenter":
-            template = "products/vpn/resource-center/article.html"
-        elif theme == "firefox":
-            template = "firefox/contentful-all.html"
-        else:
-            template = "mozorg/contentful-all.html"
-
-        return l10n_utils.render(self.request, template, context, **response_kwargs)
 
 
 class WebvisionDocView(RequireSafeMixin, TemplateView):
@@ -277,3 +265,31 @@ def anti_harassment_tool_view(request):
     ctx = {"action": action, "newsletter_form": newsletter_form}
 
     return l10n_utils.render(request, "mozorg/antiharassment-tool.html", ctx)
+
+
+@require_safe
+def advertising_landing_view(request):
+    context = {}
+    template = "mozorg/advertising/landing.html"
+    return l10n_utils.render(request, template, context)
+
+
+@require_safe
+def advertising_solutions_view(request):
+    context = {}
+    template = "mozorg/advertising/solutions.html"
+    return l10n_utils.render(request, template, context)
+
+
+@require_safe
+def advertising_principles_view(request):
+    context = {}
+    template = "mozorg/advertising/principles.html"
+    return l10n_utils.render(request, template, context)
+
+
+@require_safe
+def advertising_impact_view(request):
+    context = {}
+    template = "mozorg/advertising/impact.html"
+    return l10n_utils.render(request, template, context)

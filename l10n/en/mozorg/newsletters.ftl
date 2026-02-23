@@ -60,6 +60,8 @@ newsletters-please-select-country = Please select a country or region
 # Form field error message
 newsletters-please-select-language = Please select a language
 
+newsletters-it-may-take = It may take up to an hour for newly subscribed information to be reflected on this page.
+
 # Variables:
 #   $url (url) - link to https://support.mozilla.org/kb/managing-account-data
 
@@ -72,6 +74,18 @@ newsletters-to-get-access-to-the-whole = To get access to the whole world of { -
 # Variables:
 #   $url (url) - link to https://www.mozilla.org/about/forums/
 newsletters-there-are-many-ways-to = There are many ways to engage with { -brand-name-mozilla } and { -brand-name-firefox }. If you didn’t find what you were looking for here, check out our <a href="{ $url }">community pages</a>.
+
+# Variables:
+#   $foundation (url) - link to https://www.mozillafoundation.org
+newsletters-newsletter-subscriptions-for = Newsletter subscriptions for <a href="{ $foundation }">{ -brand-name-mozilla-foundation }</a> are now managed separately.
+
+# Variables:
+#   $unsubscribe (url) - link to https://www.mozillafoundation.org/newsletter/unsubscribe
+newsletters-to-unsubscribe = To unsubscribe from a { -brand-name-mozilla-foundation } newsletter click here: <a href="{ $unsubscribe }">{ $unsubscribe }</a>.
+
+# Variables:
+#   $subscribe (url) - link to https://www.mozillafoundation.org/newsletter
+newsletters-if-you-arent-already-subscribed = If you aren’t already subscribed and would like to stay updated, click here: <a href="{ $subscribe }">{ $subscribe }</a>.
 
 # Variables:
 #   $newsletter (string) - newsletter name
@@ -119,14 +133,8 @@ newsletters-unlock-the-world-of-web = Unlock the world of web development with o
 # Headline for https://www-dev.allizom.org/newsletter/firefox/
 newsletters-make-the-most = Make the most out of { -brand-name-firefox }
 
-# Obsolete string (expires: 2024-11-01)
-newsletters-put-more-fox-in-your-inbox = Put more fox in your inbox.
-
 # Subtitle for https://www-dev.allizom.org/newsletter/firefox/
 newsletters-sign-up-to-receive-monthly = Sign up to receive monthly updates from { -brand-name-firefox } and internet trends that shape your life online.
-
-# Obsolete string (expires: 2024-11-01)
-newsletters-see-where-the-web-can-take = See where the Web can take you with monthly { -brand-name-firefox } tips, tricks and Internet intel.
 
 newsletters-we-are-sorry-but-there = We are sorry, but there was a problem with our system. Please try again later!
 newsletters-thanks-for-updating-your = Thanks for updating your email preferences.
@@ -143,6 +151,9 @@ newsletters-fxa-error-retry = We are sorry, but there was a problem directing yo
 #   $url (url) - link to https://www.mozilla.org/newsletter/
 newsletters-this-email-address-is-not = This email address is not in our system. Please double check your address or <a href="{ $url }">subscribe to our newsletters.</a>
 
+# Note: Bluesky is a brand name that shouldn't be translated
+newsletters-im-keeping-in-touch-v3 = I’m keeping in touch with { -brand-name-mozilla } on Bluesky instead.
+# Obsolete, remove after 2025-05-11
 newsletters-im-keeping-in-touch-v2 = I’m keeping in touch with { -brand-name-mozilla } on { -brand-name-twitter } instead.
 
 # Headline for https://www.mozilla.org/newsletter/mozilla/
@@ -228,12 +239,6 @@ newsletters-take-action = Take Action for the Internet
 
 # Description for the newsletter in Newsletter subscription page (Take Action for the Internet)
 newsletters-add-your-voice = Add your voice to petitions, events and initiatives that fight for the future of the web.
-
-# Name for the newsletter in Newsletter subscription page
-newsletters-new-product-testing = New Product Testing
-
-# Description for the newsletter in Newsletter subscription page (New Product Testing)
-newsletters-help-us-make-a-better-v2 = Help us make a better { -brand-name-mozilla } for you by test-driving our latest products and features.
 
 # Name for the newsletter in Newsletter subscription page
 newsletters-mozilla-community = { -brand-name-mozilla } Community

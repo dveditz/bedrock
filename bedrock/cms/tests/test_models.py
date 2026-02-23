@@ -14,7 +14,7 @@ from bedrock.cms.models import (
     SimpleRichTextPage,
     StructuralPage,
 )
-from bedrock.cms.tests.factories import StructuralPageFactory
+from bedrock.cms.tests.factories import LocaleFactory, StructuralPageFactory
 
 pytestmark = [
     pytest.mark.django_db,
@@ -100,32 +100,19 @@ def test_CMS_ALLOWED_PAGE_MODELS_controls_Page_can_create_at(
         assert page_class.can_create_at(home_page) == success_expected
 
 
-def test__patch_request_for_bedrock__locales_available_via_cms(tiny_localized_site, rf):
+@mock.patch("bedrock.cms.models.base.get_locales_for_cms_page")
+def test__patch_request_for_bedrock__locales_available_via_cms(
+    mock_get_locales_for_cms_page,
+    minimal_site,
+    rf,
+):
     request = rf.get("/some-path/that/is/irrelevant")
-    en_us_homepage = Page.objects.get(locale__language_code="en-US", slug="home")
-    en_us_test_page = en_us_homepage.get_children()[0]
 
-    # By default there are no aliases in the system, so all _locales_available_for_cms will
-    # match the pages set up in the tiny_localized_site fixture
-    assert Page.objects.filter(alias_of__isnull=False).count() == 0
+    page = SimpleRichTextPage.objects.last()  # made by the minimal_site fixture
 
-    patched_request = en_us_test_page.specific._patch_request_for_bedrock(request)
-    assert sorted(patched_request._locales_available_via_cms) == ["en-US", "fr", "pt-BR"]
+    mock_get_locales_for_cms_page.return_value = ["en-US", "fr", "pt-BR"]
 
-    # now make aliases of the test_page into Dutch and Spanish
-    nl_locale = Locale.objects.create(language_code="nl")
-    es_es_locale = Locale.objects.create(language_code="es-ES")
-
-    nl_page_alias = en_us_test_page.copy_for_translation(locale=nl_locale, copy_parents=True, alias=True)
-    nl_page_alias.save()
-
-    es_es_page_alias = en_us_test_page.copy_for_translation(locale=es_es_locale, copy_parents=True, alias=True)
-    es_es_page_alias.save()
-
-    assert Page.objects.filter(alias_of__isnull=False).count() == 4  # 2 child + 2 parent pages, which had to be copied too
-
-    # Show that the aliases don't appear in the available locales
-    patched_request = en_us_test_page.specific._patch_request_for_bedrock(request)
+    patched_request = page.specific._patch_request_for_bedrock(request)
     assert sorted(patched_request._locales_available_via_cms) == ["en-US", "fr", "pt-BR"]
 
 
@@ -137,3 +124,56 @@ def test__patch_request_for_bedrock_annotates_is_cms_page(tiny_localized_site, r
 
     patched_request = en_us_test_page.specific._patch_request_for_bedrock(request)
     assert patched_request.is_cms_page is True
+
+
+@pytest.mark.parametrize(
+    "django_locale,expected_locale_code",
+    [
+        ("en-gb", "en-GB"),  # Lowercase from Django -> mixed-case
+        ("en-ca", "en-CA"),  # Another mixed-case example
+        ("pt-br", "pt-BR"),  # Another mixed-case example
+        ("es-es", "es-ES"),  # Another mixed-case example
+        ("es-ar", "es-AR"),  # Another mixed-case example
+        ("de", "de"),  # Simple code stays the same
+    ],
+)
+def test_bedrock_locale_get_active_normalizes_case(django_locale, expected_locale_code):
+    """
+    Test that BedrockLocale.get_active() normalizes Django's lowercase
+    language codes to match Bedrock's mixed-case Locale records.
+    This is a unit test for the BedrockLocale.get_active() method that
+    verifies it properly handles the case mismatch between Django's internal
+    lowercase language codes (e.g., 'en-gb') and Bedrock's mixed-case
+    Locale records (e.g., 'en-GB').
+    Without this normalization, Wagtail's routing would fail to find the
+    correct Locale and fall back to the default locale.
+    """
+    # Create the Locale record with mixed-case code
+    locale = LocaleFactory(language_code=expected_locale_code)
+    assert locale.language_code == expected_locale_code
+
+    # Mock Django's translation.get_language() to return lowercase
+    with mock.patch("django.utils.translation.get_language", return_value=django_locale):
+        # Call BedrockLocale.get_active() (which is patched onto Locale)
+        active_locale = Locale.get_active()
+
+        # Verify it found the correct Locale despite the case mismatch
+        assert active_locale.id == locale.id
+        assert active_locale.language_code == expected_locale_code
+
+
+def test_bedrock_locale_get_active_falls_back_to_default():
+    """
+    Test that BedrockLocale.get_active() falls back to the default locale
+    when the requested locale doesn't exist.
+    """
+    # Ensure en-US exists as the default
+    default_locale = Locale.objects.get(language_code="en-US")
+
+    # Mock Django returning a locale that doesn't exist
+    with mock.patch("django.utils.translation.get_language", return_value="xx-YY"):
+        active_locale = Locale.get_active()
+
+        # Should fall back to en-US
+        assert active_locale.id == default_locale.id
+        assert active_locale.language_code == "en-US"

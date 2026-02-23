@@ -21,16 +21,20 @@
 {% block content %}
 
 {% call split(
-    image=resp_img('img/firefox/browsers/quantum/browser.jpg',
-      srcset={ 'img/firefox/browsers/quantum/browser-high-res.jpg': '2x' },
-      optional_attributes={ 'class': 'mzp-c-split-media-asset' }
+    image=resp_img('img/firefox/browsers/quantum/browser-v2.jpg',
+      srcset={ 'img/firefox/browsers/quantum/browser-high-res-v2.jpg': '2x' },
+      optional_attributes={
+        'class': 'mzp-c-split-media-asset',
+        'width': '537',
+        'height': '467'
+      }
     ),
     media_after=True,
     media_class='mzp-l-split-h-center',
     block_class='mzp-l-split-hide-media-on-sm-md'
   ) %}
   <div class="mzp-c-logo mzp-t-logo-lg mzp-t-product-firefox"></div>
-  <h1 class="mzp-u-title-xl">{{ ftl('the-latest-firefox') }}</h1>
+  <h1 class="mzp-u-title-lg">{{ ftl('the-latest-firefox') }}</h1>
   <p>{{ ftl('firefox-quantum-was') }}</p>
   {{ download_firefox_thanks() }}
   <p><a class="mzp-c-cta-link" href="https://blog.mozilla.org/blog/2017/11/14/introducing-firefox-quantum/?utm_source=mozilla.org-firefox-browsers-quantum&utm_medium=referral&utm_campaign=seo-quantum&amp;utm_content=hero&amp;entrypoint=mozilla.org-firefox-browsers-quantum">{{ ftl('learn-more-about') }}</a></p>

@@ -4,7 +4,6 @@
 
 from django.urls import path
 
-from bedrock.cms.decorators import prefer_cms
 from bedrock.mozorg.util import page
 from bedrock.products import views
 
@@ -32,21 +31,5 @@ urlpatterns = (
         views.vpn_resource_center_redirect,
         name="products.vpn.more.redirect",
     ),
-    # VPN pages for Product team (issue #10388)
-    page("vpn/more/why-mozilla-vpn/", "products/vpn/more/why-mozilla-vpn.html", ftl_files=["products/vpn/shared"], active_locales=["en-US"]),
-    page("vpn/more/do-i-need-a-vpn/", "products/vpn/more/do-i-need.html", ftl_files=["products/vpn/shared"], active_locales=["en-US"]),
-    page("vpn/more/what-is-a-vpn-v2/", "products/vpn/more/what-is-a-vpn-v2.html", ftl_files=["products/vpn/shared"], active_locales=["en-US"]),
-    # VPN Resource Center
-    path(
-        "vpn/resource-center/",
-        prefer_cms(views.resource_center_landing_view),
-        name="products.vpn.resource-center.landing",
-    ),
-    path(
-        "vpn/resource-center/<slug:slug>/",
-        prefer_cms(views.resource_center_article_view),
-        name="products.vpn.resource-center.article",
-    ),
-    path("monitor/waitlist-plus/", views.monitor_waitlist_plus_page, name="products.monitor.waitlist-plus"),
     path("monitor/waitlist-scan/", views.monitor_waitlist_scan_page, name="products.monitor.waitlist-scan"),
 )

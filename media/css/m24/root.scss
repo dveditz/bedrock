@@ -2,19 +2,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-@import '~@mozilla-protocol/core/protocol/css/includes/lib';
-@import 'vars/color';
+@use 'vars/lib' as *;
 
 :root {
     // black and white
     --m24-white: #{$token-color-white};
+    --m24-off-white: #{$token-color-off-white};
     --m24-black: #{$token-color-black};
+    --m24-off-black: #{$token-color-off-black};
 
     // gray
     --m24-light-gray: #{$token-color-light-gray};
-    --m24-medium-gray: #{$token-color-medium-gray};
+    --m24-light-mid-gray: #{$token-color-light-mid-gray};
+    --m24-mid-gray: #{$token-color-mid-gray};
+    --m24-dark-mid-gray: #{$token-color-dark-mid-gray};
     --m24-dark-gray: #{$token-color-dark-gray};
-    --m24-functional-gray: #{$token-color-functional-gray-on-white};
 
     // green
     --m24-green: #{$token-color-green};
@@ -54,15 +56,33 @@
     --text-title-lg: 24px;
     --text-title-md: 18px;
     --text-title-sm: 16px;
+    --text-title-xs: 14px;
+
+    // titles line height
+    --text-title-2xl-line-height: 1.166;
+    --text-title-xl-line-height: 1.125;
+    --text-title-lg-line-height: 1.166;
+    --text-title-md-line-height: 1.25;
+    --text-title-sm-line-height: 1.25;
+    --text-title-xs-line-height: 1.25;
 
     // body
+    --text-body-xl: 24px;
     --text-body-lg: 18px;
     --text-body-md: 16px;
-    --text-body-sm: 12px;
+    --text-body-sm: 14px;
+
+    // body line height
+    --text-body-line-height: 1.5;
 
     // buttons
-    --text-button-lg: 24px;
-    --text-button-sm: 18px;
+    --text-button-xl: 24px;
+    --text-button-lg: 18px;
+    --text-button-md: 16px;
+    --text-button-sm: 14px;
+
+    // labels
+    --text-label: 12px;
 }
 
 @media #{$mq-md} {
@@ -85,20 +105,27 @@
         --container-padding: 24px;
 
         // title
-        --text-title-2xl: 64px;
-        --text-title-xl: 48px;
-        --text-title-lg: 32px;
-        --text-title-md: 24px;
-        --text-title-sm: 16px;
+        --text-title-2xl: 80px;
+        --text-title-xl: 64px;
+        --text-title-lg: 48px;
+        --text-title-md: 32px;
+        --text-title-sm: 24px;
+        --text-title-xs: 18px;
 
         // body
-        --text-body-lg: 18px;
-        --text-body-md: 16px;
-        --text-body-sm: 12px;
+        --text-body-xl: 32px;
+        --text-body-lg: 24px;
+        --text-body-md: 18px;
+        --text-body-sm: 16px;
 
         // buttons
-        --text-button-lg: 32px;
-        --text-button-sm: 18px;
+        --text-button-xl: 32px;
+        --text-button-lg: 24px;
+        --text-button-md: 18px;
+        --text-button-sm: 16px;
+
+        // labels
+        --text-label: 14px;
     }
 }
 
@@ -124,99 +151,24 @@
         // titles
         --text-title-2xl: 128px;
         --text-title-xl: 80px;
-        --text-title-lg: 48px;
-        --text-title-md: 24px;
-        --text-title-sm: 16px;
+        --text-title-lg: 64px;
+        --text-title-md: 48px;
+        --text-title-sm: 32px;
+        --text-title-xs: 24px;
 
         // body
-        --text-body-lg: 18px;
-        --text-body-md: 16px;
-        --text-body-sm: 12px;
+        --text-body-xl: 48px;
+        --text-body-lg: 24px;
+        --text-body-md: 18px;
+        --text-body-sm: 16px;
 
         // buttons
-        --text-button-lg: 48px;
+        --text-button-xl: 48px;
+        --text-button-lg: 32px;
+        --text-button-md: 24px;
         --text-button-sm: 18px;
+
+        // labels
+        --text-label: 16px;
     }
-}
-
-$m24-font-path: '/media/fonts/m24';
-
-@font-face {
-    font-display: swap;
-    font-family: 'Mozilla Text';
-    font-style: normal;
-    font-weight: normal;
-    src:
-        url('#{$m24-font-path}/mozilla-text/MozillaText-Regular.woff2') format('woff2'),
-        url('#{$m24-font-path}/mozilla-text/MozillaText-Regular.woff') format('woff');
-}
-
-@font-face {
-    font-display: swap;
-    font-family: 'Mozilla Text';
-    font-style: normal;
-    font-weight: 600;
-    src:
-        url('#{$m24-font-path}/mozilla-text/MozillaText-SemiBold.woff2') format('woff2'),
-        url('#{$m24-font-path}/mozilla-text/MozillaText-SemiBold.woff') format('woff');
-}
-
-@font-face {
-    font-display: swap;
-    font-family: 'Mozilla Text';
-    font-style: italic;
-    font-weight: 600;
-    src:
-        url('#{$m24-font-path}/mozilla-text/MozillaText-SemiBoldItalic.woff2') format('woff2'),
-        url('#{$m24-font-path}/mozilla-text/MozillaText-SemiBoldItalic.woff') format('woff');
-}
-
-@font-face {
-    font-display: swap;
-    font-family: 'Mozilla Text';
-    font-style: normal;
-    font-weight: bold;
-    src:
-        url('#{$m24-font-path}/mozilla-text/MozillaText-Bold.woff2') format('woff2'),
-        url('#{$m24-font-path}/mozilla-text/MozillaText-Bold.woff') format('woff');
-}
-
-@font-face {
-    font-display: swap;
-    font-family: 'Mozilla Text';
-    font-style: italic;
-    font-weight: normal;
-    src:
-        url('#{$m24-font-path}/mozilla-text/MozillaText-Italic.woff2') format('woff2'),
-        url('#{$m24-font-path}/mozilla-text/MozillaText-Italic.woff') format('woff');
-}
-
-@font-face {
-    font-display: swap;
-    font-family: 'Mozilla Text';
-    font-style: italic;
-    font-weight: bold;
-    src:
-        url('#{$m24-font-path}/mozilla-text/MozillaText-BoldItalic.woff2') format('woff2'),
-        url('#{$m24-font-path}/mozilla-text/MozillaText-BoldItalic.woff') format('woff');
-}
-
-@font-face {
-    font-display: swap;
-    font-family: 'Mozilla Headline';
-    font-style: normal;
-    font-weight: normal;
-    src:
-        url('#{$m24-font-path}/mozilla-headline/MozillaHeadline-Regular.woff2') format('woff2'),
-        url('#{$m24-font-path}/mozilla-headline/MozillaHeadline-Regular.woff') format('woff');
-}
-
-@font-face {
-    font-display: swap;
-    font-family: 'Mozilla Headline';
-    font-style: normal;
-    font-weight: bold;
-    src:
-        url('#{$m24-font-path}/mozilla-headline/MozillaHeadline-Bold.woff2') format('woff2'),
-        url('#{$m24-font-path}/mozilla-headline/MozillaHeadline-Bold.woff') format('woff');
 }
